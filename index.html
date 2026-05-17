@@ -59,6 +59,7 @@
       <button class="nav-tab"         onclick="go('margenes')">Márgenes</button>
       <button class="nav-tab special" onclick="go('historias')">🩺 Historias</button>
       <button class="nav-tab"         onclick="go('recibos')">🧾 Recibos</button>
+      <button class="nav-tab special" onclick="go('chat')" style="background:linear-gradient(135deg,var(--t700),var(--t400));color:#fff">🤖 Asistente IA</button>
     </div>
     <div class="nav-right">
       <span class="nav-user" id="nav-user-name"></span>
@@ -244,6 +245,35 @@
       </div>
     </div>
 
+    <!-- ── ASISTENTE IA ───────────────────────────────────────── -->
+    <div class="page" id="page-chat">
+      <div class="chat-wrap">
+        <div class="chat-header">
+          <div class="chat-title-block">
+            <div class="chat-ai-badge">🤖</div>
+            <div>
+              <div class="chat-title">Asistente IA — QUIROPODSCZ</div>
+              <div class="chat-subtitle">Agendá citas, consultá pacientes y más en lenguaje natural</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="chat-status"><div class="chat-status-dot"></div>En línea</div>
+            <button class="btn btn-gray btn-sm" onclick="window._limpiarChat()">🗑 Limpiar</button>
+          </div>
+        </div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input-area">
+          <div class="chat-input-wrap">
+            <textarea id="chat-input" rows="1" placeholder="Escribí algo... Ej: Agendá a María Pérez el lunes a las 10am para pie diabético en zona 1"></textarea>
+            <button class="chat-send-btn" onclick="window._enviarMensaje()" id="chat-send-btn">
+              <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+            </button>
+          </div>
+          <div class="chat-hint">Enter para nueva línea · Ctrl+Enter para enviar</div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /main -->
 
   <!-- ══════════════════════════════════════════════════
@@ -261,6 +291,8 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>Historias</button>
       <button class="bot-tab" onclick="go('recibos')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Recibos</button>
+      <button class="bot-tab" onclick="go('chat')" style="color:var(--t600)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>IA</button>
     </div>
   </nav>
 
@@ -638,6 +670,10 @@ import {
   renderAgenda, calPrev, calNext,
   nuevaCita, editCita, guardaCita, borrarCita
 } from './js/agenda.js';
+import {
+  renderChat, enviarMensaje, limpiarChat,
+  usarSugerencia, mostrarBienvenida
+} from './js/chat.js';
 
 // ── Logos ──────────────────────────────────────────────────────
 const IMG_SRC = 'data:image/jpeg;base64,' + LOGO_B64;
@@ -648,7 +684,7 @@ const IMG_SRC = 'data:image/jpeg;base64,' + LOGO_B64;
 
 // ── Páginas ────────────────────────────────────────────────────
 const ALL_PAGES = ['dashboard','agenda','registro','cuotas','egresos',
-  'fondos','membresias','margenes','historias','recibos'];
+  'fondos','membresias','margenes','historias','recibos','chat'];
 
 window.go = function(name) {
   ALL_PAGES.forEach(p => {
@@ -674,6 +710,7 @@ window.go = function(name) {
     margenes:   () => { window._renderMargenes(); window._calcSim(); },
     historias:  () => window._renderLista(),
     recibos:    () => window._renderRecibos(),
+    chat:       () => { if(!mensajes?.length) mostrarBienvenida(); },
   })[name]?.();
 };
 
@@ -1730,6 +1767,19 @@ window._guardarConfig = async function() {
 document.querySelectorAll('.overlay').forEach(o=>{
   o.addEventListener('click', e=>{ if(e.target===o) o.classList.remove('open'); });
 });
+
+// ── CHAT — teclado ────────────────────────────────────────────
+document.getElementById('chat-input')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); enviarMensaje(); }
+  // Auto-resize textarea
+  setTimeout(() => {
+    e.target.style.height = 'auto';
+    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+  }, 0);
+});
+window._enviarMensaje = enviarMensaje;
+window._limpiarChat   = limpiarChat;
+window._usarSugerencia = usarSugerencia;
 
 // ── INICIAR ────────────────────────────────────────────────────
 initAuth();
