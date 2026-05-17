@@ -1,0 +1,1738 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QUIROPODSCZ — Sistema Integral v3</title>
+<link rel="stylesheet" href="css/styles.css">
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<!-- jsPDF para PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════
+     PANTALLA DE LOGIN
+════════════════════════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo-wrap">
+      <div class="auth-logo"><img id="auth-logo-img" src="" alt=""></div>
+      <div>
+        <div class="auth-brand">QUIROPODSCZ</div>
+        <div class="auth-sub">Podología a domicilio · Santa Cruz de la Sierra</div>
+      </div>
+    </div>
+    <div class="auth-title">Iniciar sesión</div>
+    <div id="auth-err" class="auth-err"></div>
+    <div class="fg"><label>Correo electrónico</label><input type="email" id="auth-email" placeholder="correo@ejemplo.com" autocomplete="username"></div>
+    <div class="fg"><label>Contraseña</label><input type="password" id="auth-pass" placeholder="••••••••" autocomplete="current-password"></div>
+    <button class="btn btn-p" style="width:100%;padding:11px" onclick="window._login()">Ingresar</button>
+    <div id="auth-loading" style="text-align:center;margin-top:12px;display:none;color:var(--g500);font-size:13px">Ingresando...</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     APP PRINCIPAL
+════════════════════════════════════════════════════ -->
+<div id="app-screen">
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="brand">
+      <div class="brand-logo"><img id="nav-logo" src="" alt="Q"></div>
+      <div>
+        <div class="brand-title">QUIROPODSCZ</div>
+        <div class="brand-sub" id="nav-sub">Pod. Erik Quiroz</div>
+      </div>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active"  onclick="go('dashboard')">Dashboard</button>
+      <button class="nav-tab"         onclick="go('agenda')">📅 Agenda</button>
+      <button class="nav-tab"         onclick="go('registro')">Registro</button>
+      <button class="nav-tab"         onclick="go('cuotas')">Cuotas</button>
+      <button class="nav-tab"         onclick="go('egresos')">Egresos</button>
+      <button class="nav-tab"         onclick="go('fondos')">Fondos</button>
+      <button class="nav-tab"         onclick="go('membresias')">Membresías</button>
+      <button class="nav-tab"         onclick="go('margenes')">Márgenes</button>
+      <button class="nav-tab special" onclick="go('historias')">🩺 Historias</button>
+      <button class="nav-tab"         onclick="go('recibos')">🧾 Recibos</button>
+    </div>
+    <div class="nav-right">
+      <span class="nav-user" id="nav-user-name"></span>
+      <button class="btn-icon" onclick="window._openConfig()" title="Configuración">⚙</button>
+      <button class="btn-icon" onclick="window._logout()" title="Cerrar sesión">↩</button>
+    </div>
+  </nav>
+
+  <div class="main">
+
+    <!-- ── DASHBOARD ─────────────────────────────────────── -->
+    <div class="page active" id="page-dashboard">
+      <div class="sec-hdr">
+        <div><div class="sec-title">Dashboard financiero</div><div class="c-muted" id="dash-sub" style="font-size:12px;margin-top:2px"></div></div>
+        <select id="dash-month" onchange="window._renderDashboard()" style="padding:6px 10px;border:1px solid var(--t200);border-radius:7px;font-size:12px;background:#fff"></select>
+      </div>
+      <div id="sem-banner" class="semaforo sem-rojo"><div class="sem-dot" id="sem-dot" style="background:var(--red)"></div><div id="sem-txt">Cargando...</div></div>
+      <div class="kpi-grid">
+        <div class="kpi teal"><div class="kpi-lbl">Ingresos mes</div><div class="kpi-val" id="k-ing">Bs. 0</div><div class="kpi-sub" id="k-pac">0 consultas</div></div>
+        <div class="kpi teal"><div class="kpi-lbl">Ticket promedio</div><div class="kpi-val" id="k-ticket">Bs. 0</div><div class="kpi-sub">meta: Bs. 170</div></div>
+        <div class="kpi warn"><div class="kpi-lbl">Egresos mes</div><div class="kpi-val" id="k-eg">Bs. 0</div><div class="kpi-sub">fijos + variables</div></div>
+        <div class="kpi teal"><div class="kpi-lbl">Margen operativo</div><div class="kpi-val" id="k-mg">Bs. 0</div><div class="kpi-sub" id="k-mgpct"></div></div>
+        <div class="kpi teal"><div class="kpi-lbl">Resultado neto</div><div class="kpi-val" id="k-neto">Bs. 0</div><div class="kpi-sub">sueldo Bs. 4.000 inc.</div></div>
+        <div class="kpi info"><div class="kpi-lbl">Cuotas pendientes</div><div class="kpi-val" id="k-cuotas">Bs. 0</div><div class="kpi-sub" id="k-cuotas-n"></div></div>
+      </div>
+      <div class="two-col">
+        <div class="card"><div class="card-title">Ingresos por semana</div><div class="ch200"><canvas id="chSem"></canvas></div></div>
+        <div class="card"><div class="card-title">Servicios más vendidos</div><div class="ch200"><canvas id="chSvc"></canvas></div></div>
+      </div>
+      <div class="card"><div class="card-title">Evolución mensual — Ingresos vs Egresos</div><div class="ch240"><canvas id="chEvol"></canvas></div></div>
+      <div class="two-col">
+        <div class="card" style="margin-bottom:0"><div class="card-title">Punto de equilibrio</div><div id="eq-content"></div></div>
+        <div class="card" style="margin-bottom:0"><div class="card-title">Ingresos pasivos</div><div id="pas-content"></div></div>
+      </div>
+    </div>
+
+    <!-- ── AGENDA ─────────────────────────────────────────── -->
+    <div class="page" id="page-agenda">
+      <div class="sec-hdr">
+        <div><div class="sec-title">Agenda</div></div>
+        <button class="btn btn-p" onclick="window._nuevaCita(null)">+ Nueva cita</button>
+      </div>
+      <div class="two-col" style="align-items:start">
+        <div class="card" style="margin-bottom:0">
+          <div class="cal-nav">
+            <button class="btn btn-gray btn-sm" onclick="window._calPrev()">◀</button>
+            <h3 id="cal-month-hdr"></h3>
+            <button class="btn btn-gray btn-sm" onclick="window._calNext()">▶</button>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <div class="card-title" id="agenda-day-title">Seleccioná un día</div>
+          <div id="agenda-day-panel"><div class="empty">Hacé clic en un día del calendario.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── REGISTRO ───────────────────────────────────────── -->
+    <div class="page" id="page-registro">
+      <div class="sec-hdr">
+        <div><div class="sec-title">Registro de consultas</div></div>
+        <button class="btn btn-p" onclick="openM('modal-c')">+ Nueva consulta</button>
+      </div>
+      <div style="margin-bottom:14px"><select id="reg-month" onchange="window._renderRegistro()" style="padding:6px 10px;border:1px solid var(--t200);border-radius:7px;font-size:12px;background:#fff"></select></div>
+      <div class="card"><div id="reg-wrap"><div class="empty">Cargando...</div></div></div>
+    </div>
+
+    <!-- ── CUOTAS ─────────────────────────────────────────── -->
+    <div class="page" id="page-cuotas">
+      <div class="sec-hdr">
+        <div><div class="sec-title">Cuotas y saldos pendientes</div><div class="c-muted" style="font-size:12px;margin-top:2px">Ortonixia · Matricectomía · Paquetes fraccionados</div></div>
+        <button class="btn btn-p" onclick="openM('modal-cq')">+ Nueva cuota</button>
+      </div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr))">
+        <div class="kpi info"><div class="kpi-lbl">Total pendiente</div><div class="kpi-val" id="cq-pend-kpi">Bs. 0</div><div class="kpi-sub">por cobrar</div></div>
+        <div class="kpi teal"><div class="kpi-lbl">Total cobrado</div><div class="kpi-val" id="cq-cob-kpi">Bs. 0</div><div class="kpi-sub">de tratamientos</div></div>
+        <div class="kpi warn"><div class="kpi-lbl">Activos</div><div class="kpi-val" id="cq-act-kpi">0</div><div class="kpi-sub">con cuotas abiertas</div></div>
+        <div class="kpi teal"><div class="kpi-lbl">Completados</div><div class="kpi-val" id="cq-comp-kpi">0</div><div class="kpi-sub">sin saldo</div></div>
+      </div>
+      <div class="card"><div id="cuotas-wrap"><div class="empty">Cargando...</div></div></div>
+    </div>
+
+    <!-- ── EGRESOS ────────────────────────────────────────── -->
+    <div class="page" id="page-egresos">
+      <div class="sec-hdr"><div class="sec-title">Registro de egresos</div><button class="btn btn-p" onclick="openM('modal-e')">+ Nuevo egreso</button></div>
+      <div style="margin-bottom:14px"><select id="eg-month" onchange="window._renderEgresos()" style="padding:6px 10px;border:1px solid var(--t200);border-radius:7px;font-size:12px;background:#fff"></select></div>
+      <div class="two-col">
+        <div class="card"><div class="card-title">Egresos del mes</div><div id="eg-list"></div><div class="divider"></div><div style="display:flex;justify-content:space-between"><span class="fw6 c-muted" style="font-size:13px">Total</span><span class="fw6 c-red" style="font-size:16px" id="eg-total">Bs. 0</span></div></div>
+        <div class="card"><div class="card-title">Por categoría</div><div class="ch180"><canvas id="chEg"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ── FONDOS ─────────────────────────────────────────── -->
+    <div class="page" id="page-fondos">
+      <div class="sec-hdr"><div class="sec-title">Fondos de ahorro</div></div>
+      <div class="fund-card fund-brasil">
+        <div class="fund-lbl">🇧🇷 Meta Brasil — Campo Grande · Podomel / Podoplus</div>
+        <div class="fund-amt" id="f-br-amt">Bs. 0</div>
+        <div class="fund-meta">de Bs. 5.177 objetivo — Julio 2026</div>
+        <div class="prog-track"><div class="prog-fill" id="f-br-bar" style="width:0%"></div></div>
+        <div class="fund-miles"><span>Mayo Bs.720</span><span>Junio Bs.2.320</span><span>Julio Bs.5.120 🎯</span></div>
+      </div>
+      <div class="fund-card fund-usa">
+        <div class="fund-lbl">🇺🇸 Meta USA — via suegra · MadaJet XL + Crioanestesia</div>
+        <div class="fund-amt" id="f-us-amt">Bs. 0</div>
+        <div class="fund-meta">de Bs. 7.600 objetivo — Septiembre 2026</div>
+        <div class="prog-track"><div class="prog-fill" id="f-us-bar" style="width:0%"></div></div>
+        <div class="fund-miles"><span>MadaJet XL $645</span><span>Crioanestesia $25</span><span>Torniquete $40</span></div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Registrar aporte</div>
+          <div class="form-row"><div class="fg"><label>Fondo</label><select id="f-tipo"><option value="brasil">🇧🇷 Brasil</option><option value="usa">🇺🇸 USA</option></select></div><div class="fg"><label>Mes</label><select id="f-mes"></select></div></div>
+          <div class="fg"><label>Monto Bs.</label><input type="number" id="f-monto" placeholder="720"></div>
+          <div class="fg"><label>Nota</label><input type="text" id="f-nota" placeholder="Ahorro Mayo 2026"></div>
+          <div class="form-actions"><button class="btn btn-p" onclick="window._saveFondo()">Guardar aporte</button></div>
+        </div>
+        <div class="card"><div class="card-title">Historial de aportes</div><div id="f-hist"></div></div>
+      </div>
+    </div>
+
+    <!-- ── MEMBRESÍAS ─────────────────────────────────────── -->
+    <div class="page" id="page-membresias">
+      <div class="sec-hdr"><div class="sec-title">Membresías y Paquetes</div></div>
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-title">Planes de membresía mensual — precios sin transporte</div>
+        <div class="mem-cards" id="mem-cards"></div>
+        <div style="font-size:11px;color:var(--g500);background:var(--g50);padding:10px 12px;border-radius:8px;margin-top:4px"><strong>Transporte:</strong> siempre aparte — Zona 1 Bs. 30 · Zona 2 Bs. 50 · Procedimientos quirúrgicos Bs. 50</div>
+      </div>
+      <div class="card"><div class="card-title">Paquetes — 8 opciones por nicho</div><div id="pack-list"></div></div>
+    </div>
+
+    <!-- ── MÁRGENES ───────────────────────────────────────── -->
+    <div class="page" id="page-margenes">
+      <div class="sec-hdr"><div class="sec-title">Análisis de márgenes</div></div>
+      <div class="two-col">
+        <div class="card"><div class="card-title">Margen por servicio</div><div id="mg-list"></div></div>
+        <div class="card"><div class="card-title">Rentabilidad comparativa</div><div class="ch240"><canvas id="chMg"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Simulador de escenarios</div>
+        <div class="form-row" style="gap:12px">
+          <div class="fg"><label>Pac./semana</label><input type="number" id="sim-p" value="6" oninput="window._calcSim()"></div>
+          <div class="fg"><label>Ticket Bs.</label><input type="number" id="sim-t" value="111" oninput="window._calcSim()"></div>
+          <div class="fg"><label>Semanas/mes</label><input type="number" id="sim-s" value="4" oninput="window._calcSim()"></div>
+        </div>
+        <div id="sim-out" class="sim-out"></div>
+      </div>
+    </div>
+
+    <!-- ── HISTORIAS CLÍNICAS ─────────────────────────────── -->
+    <div class="page" id="page-historias">
+      <div style="max-width:1100px;margin:0 auto">
+        <div class="sec-hdr">
+          <div><div class="sec-title">Historias clínicas</div><div class="c-muted" style="font-size:12px;margin-top:2px" id="hc-count">0 pacientes</div></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input type="text" id="buscador" placeholder="Buscar paciente..." style="padding:7px 12px;border:1px solid var(--g300);border-radius:7px;font-size:13px;outline:none;width:200px" oninput="window._renderLista()">
+            <button class="btn btn-p" onclick="window._openNuevaHistoria()">+ Nueva historia</button>
+          </div>
+        </div>
+        <div class="card"><div id="lista-wrap"><div class="empty">Cargando...</div></div></div>
+      </div>
+    </div>
+
+    <!-- ── RECIBOS ────────────────────────────────────────── -->
+    <div class="page" id="page-recibos">
+      <div style="max-width:1100px;margin:0 auto">
+        <div class="sec-hdr">
+          <div><div class="sec-title">Recibos y facturas</div><div class="c-muted" style="font-size:12px;margin-top:2px" id="rec-count">0 recibos</div></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <select id="rec-month" onchange="window._renderRecibos()" style="padding:6px 10px;border:1px solid var(--t200);border-radius:7px;font-size:12px;background:#fff"></select>
+            <button class="btn btn-p" onclick="window._openNuevoRecibo()">+ Nuevo recibo</button>
+          </div>
+        </div>
+        <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr))">
+          <div class="kpi teal"><div class="kpi-lbl">Total facturado</div><div class="kpi-val" id="rec-total-kpi">Bs. 0</div><div class="kpi-sub">del mes</div></div>
+          <div class="kpi teal"><div class="kpi-lbl">Recibos emitidos</div><div class="kpi-val" id="rec-n-kpi">0</div><div class="kpi-sub">del mes</div></div>
+          <div class="kpi warn"><div class="kpi-lbl">Pendientes</div><div class="kpi-val" id="rec-pend-kpi">Bs. 0</div><div class="kpi-sub" id="rec-pend-n"></div></div>
+          <div class="kpi teal"><div class="kpi-lbl">Último N° recibo</div><div class="kpi-val" id="rec-ultimo-kpi">#000</div><div class="kpi-sub">correlativo</div></div>
+        </div>
+        <div class="card"><div id="rec-wrap"><div class="empty">Cargando...</div></div></div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+
+  <!-- ══════════════════════════════════════════════════
+       BOTTOM NAV (móvil)
+  ══════════════════════════════════════════════════ -->
+  <nav class="bot-nav">
+    <div class="bot-inner">
+      <button class="bot-tab active" onclick="go('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Panel</button>
+      <button class="bot-tab" onclick="go('agenda')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Agenda</button>
+      <button class="bot-tab" onclick="go('registro')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>Registro</button>
+      <button class="bot-tab" onclick="go('historias')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>Historias</button>
+      <button class="bot-tab" onclick="go('recibos')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Recibos</button>
+    </div>
+  </nav>
+
+</div><!-- /app-screen -->
+
+<!-- ════════════════════════════════════════════════════
+     MODALES
+════════════════════════════════════════════════════ -->
+
+<!-- Modal Cita -->
+<div class="overlay" id="modal-cita">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-hdr"><div class="modal-title" id="modal-cita-title">Nueva cita</div><button class="modal-x" onclick="closeM('modal-cita')">×</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="fg"><label>Fecha</label><input type="date" id="cita-fecha"></div>
+        <div class="fg"><label>Hora inicio</label><input type="time" id="cita-hora-inicio"></div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>Hora fin (opc.)</label><input type="time" id="cita-hora-fin"></div>
+        <div class="fg"><label>Estado</label>
+          <select id="cita-estado"><option>Confirmada</option><option>Pendiente</option><option>Cancelada</option><option>Realizada</option></select>
+        </div>
+      </div>
+      <div class="fg"><label>Paciente</label>
+        <input type="text" id="cita-paciente" list="cita-pac-list" placeholder="Nombre del paciente" autocomplete="off">
+        <datalist id="cita-pac-list"></datalist>
+      </div>
+      <div class="fg"><label>Servicio</label>
+        <select id="cita-servicio"><option value="">— Seleccionar —</option></select>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>Zona</label><select id="cita-zona"><option>Zona 1</option><option>Zona 2</option></select></div>
+        <div class="fg"><label>Dirección</label><input type="text" id="cita-dir" placeholder="Referencia..."></div>
+      </div>
+      <div class="fg"><label>Notas</label><textarea id="cita-notas" rows="2" placeholder="Observaciones..."></textarea></div>
+      <div class="form-actions">
+        <button class="btn btn-gray" onclick="closeM('modal-cita')">Cancelar</button>
+        <button class="btn btn-p" onclick="window._guardaCita()">Guardar cita</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Consulta -->
+<div class="overlay" id="modal-c">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title">Nueva consulta</div><button class="modal-x" onclick="closeM('modal-c')">×</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="fg"><label>Fecha</label><input type="date" id="c-fecha"></div>
+        <div class="fg"><label>N° Ficha</label><input type="number" id="c-ficha" placeholder="12"></div>
+      </div>
+      <div class="fg"><label>Paciente</label>
+        <input type="text" id="c-paciente" list="c-pac-list" placeholder="Nombre completo" autocomplete="off">
+        <datalist id="c-pac-list"></datalist>
+      </div>
+      <div class="fg"><label>Servicio</label><select id="c-servicio"><option value="">— Seleccionar —</option></select></div>
+      <div class="form-row">
+        <div class="fg"><label>Monto Bs.</label><input type="number" id="c-monto" placeholder="170"></div>
+        <div class="fg"><label>Transporte Bs.</label><input type="number" id="c-transp" placeholder="30" value="30"></div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>Zona</label><select id="c-zona"><option>Zona 1</option><option>Zona 2</option></select></div>
+        <div class="fg"><label>Pago</label><select id="c-pago"><option>Efectivo</option><option>QR / Transferencia</option><option>Cuotas</option></select></div>
+      </div>
+      <div class="fg"><label>Estado</label><select id="c-estado"><option>Realizada</option><option>Pendiente</option><option>Cancelada</option></select></div>
+      <div class="fg"><label>Notas</label><textarea id="c-notas" rows="2" placeholder="Indicaciones, observaciones..."></textarea></div>
+      <div class="form-actions">
+        <button class="btn btn-gray" onclick="closeM('modal-c')">Cancelar</button>
+        <button class="btn btn-p" onclick="window._saveConsulta()">Guardar consulta</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Cuota -->
+<div class="overlay" id="modal-cq">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title">Nueva cuota / tratamiento</div><button class="modal-x" onclick="closeM('modal-cq')">×</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="fg"><label>Paciente</label>
+          <input type="text" id="cq-pac" list="cq-pac-list" placeholder="Nombre" autocomplete="off">
+          <datalist id="cq-pac-list"></datalist>
+        </div>
+        <div class="fg"><label>N° Ficha</label><input type="number" id="cq-ficha" placeholder="12"></div>
+      </div>
+      <div class="fg"><label>Tratamiento</label><input type="text" id="cq-trat" placeholder="Ortonixia (4 sesiones)"></div>
+      <div class="form-row">
+        <div class="fg"><label>Fecha inicio</label><input type="date" id="cq-fecha"></div>
+        <div class="fg"><label>Total Bs.</label><input type="number" id="cq-total" placeholder="480" oninput="window._calcCuota()"></div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>N° cuotas</label><input type="number" id="cq-num" value="4" oninput="window._calcCuota()"></div>
+        <div class="fg"><label>Bs./cuota</label><input type="text" id="cq-vc" readonly style="background:var(--t50);font-weight:600;color:var(--t700)"></div>
+      </div>
+      <div class="fg"><label>Nota</label><input type="text" id="cq-nota" placeholder="Próxima cita..."></div>
+      <div class="form-actions">
+        <button class="btn btn-gray" onclick="closeM('modal-cq')">Cancelar</button>
+        <button class="btn btn-p" onclick="window._saveCuota()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Egreso -->
+<div class="overlay" id="modal-e">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-hdr"><div class="modal-title">Nuevo egreso</div><button class="modal-x" onclick="closeM('modal-e')">×</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="fg"><label>Fecha</label><input type="date" id="e-fecha"></div>
+        <div class="fg"><label>Categoría</label>
+          <select id="e-cat">
+            <option>Gasolina</option><option>Publicidad</option><option>Insumos clínicos</option>
+            <option>Insumos especiales</option><option>Equipamiento</option><option>Otros</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label>Descripción</label><input type="text" id="e-desc" placeholder="Carga de gasolina semana 3..."></div>
+      <div class="form-row">
+        <div class="fg"><label>Monto Bs.</label><input type="number" id="e-monto" placeholder="300"></div>
+        <div class="fg"><label>Mes</label><select id="e-mes"></select></div>
+      </div>
+      <div class="fg"><label>N° Recibo / referencia</label><input type="text" id="e-rec" placeholder="REC-001"></div>
+      <div class="form-actions">
+        <button class="btn btn-gray" onclick="closeM('modal-e')">Cancelar</button>
+        <button class="btn btn-p" onclick="window._saveEgreso()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Recibo -->
+<div class="overlay" id="modal-rec">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hdr"><div class="modal-title">Nuevo recibo</div><button class="modal-x" onclick="closeM('modal-rec')">×</button></div>
+    <div class="modal-body" style="padding:0 20px 20px">
+      <div class="form-row">
+        <div class="fg"><label>Fecha</label><input type="date" id="r-fecha"></div>
+        <div class="fg"><label>N° Recibo</label><input type="text" id="r-num" readonly style="background:var(--g50);font-weight:600;color:var(--t700)"></div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>Paciente</label>
+          <input type="text" id="r-paciente" placeholder="Nombre completo" list="r-pac-list" autocomplete="off">
+          <datalist id="r-pac-list"></datalist>
+        </div>
+        <div class="fg"><label>N° Ficha</label><input type="number" id="r-ficha" placeholder="12"></div>
+      </div>
+      <div class="fg"><label>CI / Documento</label><input type="text" id="r-ci" placeholder="12345678 SC"></div>
+      <div class="fg"><label>Servicio</label>
+        <select id="r-servicio" onchange="window._autoMontoRec()"><option value="">— Seleccionar —</option></select>
+      </div>
+      <div class="fg"><label>Descripción adicional</label><input type="text" id="r-desc" placeholder="Detalle..."></div>
+      <div class="form-row">
+        <div class="fg"><label>Subtotal Bs.</label><input type="number" id="r-subtotal" placeholder="170" oninput="window._calcTotalRec()"></div>
+        <div class="fg"><label>Transporte Bs.</label><input type="number" id="r-transporte" placeholder="30" value="30" oninput="window._calcTotalRec()"></div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>Descuento Bs.</label><input type="number" id="r-descuento" placeholder="0" value="0" oninput="window._calcTotalRec()"></div>
+        <div class="fg"><label>TOTAL Bs.</label><input type="text" id="r-total" readonly style="background:var(--t50);font-family:'DM Serif Display',serif;font-size:16px;font-weight:600;color:var(--t700)"></div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>Forma de pago</label><select id="r-pago"><option>Efectivo</option><option>QR / Transferencia</option><option>Cuotas</option></select></div>
+        <div class="fg"><label>Estado</label><select id="r-estado"><option>Pagado</option><option>Pendiente</option></select></div>
+      </div>
+      <div class="fg"><label>Notas</label><input type="text" id="r-notas" placeholder="Próxima cita, observaciones..."></div>
+      <div class="form-actions">
+        <button class="btn btn-gray" onclick="closeM('modal-rec')">Cancelar</button>
+        <button class="btn btn-p" onclick="window._saveRecibo()">Guardar y generar PDF</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal vista recibo PDF -->
+<div class="overlay" id="modal-rec-preview">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-hdr">
+      <div class="modal-title">Recibo / Factura</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-p" onclick="window._imprimirRecibo()">Descargar / Imprimir</button>
+        <button class="modal-x" onclick="closeM('modal-rec-preview')">×</button>
+      </div>
+    </div>
+    <div style="padding:0 20px 20px"><div id="recibo-preview" class="recibo-doc"></div></div>
+  </div>
+</div>
+
+<!-- Modal Historia Clínica (incluido desde historias.js) -->
+<div class="overlay" id="modal-historia" style="align-items:flex-start;padding-top:20px">
+  <div class="modal" style="max-width:760px;max-height:calc(100vh - 40px)">
+    <div class="modal-hdr">
+      <div class="modal-title" id="modal-historia-title">Nueva historia clínica</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-gray btn-sm" onclick="window._guardarHistoria()">Guardar</button>
+        <button class="modal-x" onclick="closeM('modal-historia')">×</button>
+      </div>
+    </div>
+    <div style="padding:0 20px">
+      <div class="tabs-hdr">
+        <button class="tab active" onclick="switchTab('tab-datos')">Datos del paciente</button>
+        <button class="tab" onclick="switchTab('tab-clinica')">Clínica</button>
+        <button class="tab" onclick="switchTab('tab-piezas')">Piezas ISO</button>
+        <button class="tab" onclick="switchTab('tab-fotos')">Fotos</button>
+        <button class="tab" onclick="switchTab('tab-informe')">Informe IA</button>
+      </div>
+
+      <!-- Tab: Datos -->
+      <div id="tab-datos" class="tab-pane active" style="padding-bottom:20px">
+        <div class="form-row">
+          <div class="fg"><label>N° Ficha</label><input type="number" id="h-ficha" placeholder="Auto"></div>
+          <div class="fg"><label>Fecha consulta</label><input type="date" id="h-fecha"></div>
+        </div>
+        <div class="fg"><label>Nombre del paciente</label>
+          <input type="text" id="h-nombre" list="h-pac-list" placeholder="Nombre completo" autocomplete="off" oninput="window._autoFillPacHist()">
+          <datalist id="h-pac-list"></datalist>
+        </div>
+        <div class="form-row">
+          <div class="fg"><label>Fecha nacimiento</label><input type="date" id="h-nacimiento"></div>
+          <div class="fg"><label>CI / Documento</label><input type="text" id="h-ci" placeholder="12345678 SC"></div>
+        </div>
+        <div class="form-row">
+          <div class="fg"><label>Teléfono (WhatsApp)</label><input type="text" id="h-tel" placeholder="+591 70000000"></div>
+          <div class="fg"><label>Dirección / Zona</label><input type="text" id="h-dir" placeholder="Barrio, zona..."></div>
+        </div>
+        <div class="form-row">
+          <div class="fg"><label>Diabetes</label><select id="h-diabetes"><option>No</option><option>Tipo 1</option><option>Tipo 2</option><option>Prediabetes</option></select></div>
+          <div class="fg"><label>HTA</label><select id="h-hta"><option>No</option><option>Sí</option><option>Controlada</option></select></div>
+        </div>
+        <div class="fg"><label>Alergias conocidas</label><input type="text" id="h-alergias" placeholder="AINE, ninguna..."></div>
+        <div class="fg"><label>Medicación actual</label><input type="text" id="h-medicacion" placeholder="Metformina..."></div>
+        <div class="fg"><label>Médico tratante</label><input type="text" id="h-medico" placeholder="Dra. Jaldin"></div>
+      </div>
+
+      <!-- Tab: Clínica -->
+      <div id="tab-clinica" class="tab-pane" style="padding-bottom:20px">
+        <div class="fg"><label>Servicio realizado</label><select id="h-servicio"><option value="">— Seleccionar —</option></select></div>
+        <div class="fg"><label>Motivo de consulta</label><textarea id="h-motivo" rows="2" placeholder="Dolor en uña encarnada..."></textarea></div>
+        <div class="fg"><label>Hallazgos al examen clínico</label><textarea id="h-hallazgos" rows="2" placeholder="Uña encarnada lateral derecha con tejido granuloma..."></textarea></div>
+        <div class="form-row">
+          <div class="fg"><label>Diagnóstico</label><input type="text" id="h-diagnostico" placeholder="Onicocriptosis grado 2"></div>
+          <div class="fg"><label>Grado / severidad</label><input type="text" id="h-grado" placeholder="Grado II"></div>
+        </div>
+        <div class="fg"><label>Tratamiento realizado</label><textarea id="h-tratamiento" rows="2" placeholder="Desincurvación lateral + gasas tubulares..."></textarea></div>
+        <div class="fg"><label>Insumos utilizados</label><input type="text" id="h-insumos" placeholder="Gasas, bisturí 15, lidocaína 2%..."></div>
+        <div class="form-row">
+          <div class="fg"><label>Anestesia</label><select id="h-anestesia"><option>No se usó</option><option>Lidocaína 2% sin epinefrina</option><option>Lidocaína 2% con epinefrina</option><option>Crioanestesia tópica</option></select></div>
+          <div class="fg"><label>Tolerancia del paciente</label><select id="h-tolerancia"><option>Muy buena</option><option>Buena</option><option>Regular</option><option>Mala</option></select></div>
+        </div>
+        <div class="fg"><label>Indicaciones post-tratamiento</label><textarea id="h-indicaciones" rows="2" placeholder="Mantener seco 48hs, no calzado cerrado..."></textarea></div>
+        <div class="form-row">
+          <div class="fg"><label>Próxima cita</label><input type="date" id="h-proxima"></div>
+          <div class="fg"><label>Monto cobrado Bs.</label><input type="number" id="h-monto" placeholder="170"></div>
+        </div>
+        <div class="fg"><label>Observaciones</label><textarea id="h-obs" rows="2"></textarea></div>
+      </div>
+
+      <!-- Tab: Piezas ISO -->
+      <div id="tab-piezas" class="tab-pane" style="padding-bottom:20px">
+        <div class="dedos-grid" id="dedos-container"></div>
+        <div class="fg"><label>Notas de piezas</label><textarea id="h-notas-piezas" rows="2" placeholder="Aclaración sobre los dedos tratados..."></textarea></div>
+      </div>
+
+      <!-- Tab: Fotos -->
+      <div id="tab-fotos" class="tab-pane" style="padding-bottom:20px">
+        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+          <select id="foto-tipo" style="flex:1;min-width:140px;padding:8px">
+            <option value="Antes">Antes del tratamiento</option>
+            <option value="Durante">Durante</option>
+            <option value="Después">Después del tratamiento</option>
+            <option value="Seguimiento">Seguimiento</option>
+          </select>
+          <label class="btn btn-gray" style="cursor:pointer">
+            📷 Agregar fotos
+            <input type="file" accept="image/*" multiple style="display:none" onchange="window._agregarFotos(this)">
+          </label>
+        </div>
+        <div class="fotos-grid" id="fotos-grid"></div>
+      </div>
+
+      <!-- Tab: Informe IA -->
+      <div id="tab-informe" class="tab-pane" style="padding-bottom:20px">
+        <div id="ai-config-warn" style="background:var(--amberBg);border:1px solid #FAC775;border-radius:8px;padding:12px 14px;font-size:12px;color:#633806;margin-bottom:12px;line-height:1.6;display:none">
+          Configurá la URL del Cloudflare Worker en <button onclick="window._openConfig()" style="background:none;border:none;cursor:pointer;color:#633806;font-weight:600;text-decoration:underline;font-size:12px">Configuración ⚙</button>
+        </div>
+        <button class="btn btn-p" onclick="window._generarInforme()" style="margin-bottom:14px">🤖 Generar informe con IA</button>
+        <div class="ai-panel" id="ai-panel" style="display:none">
+          <div class="ai-status"><div class="ai-dot" id="ai-dot"></div><span id="ai-status-txt">Procesando...</span></div>
+          <div class="ai-result" id="ai-result" style="display:none"></div>
+        </div>
+        <div id="informe-acciones" style="display:none;margin-top:12px">
+          <div class="fg"><label>Texto del informe (editable)</label><textarea id="informe-texto" rows="12"></textarea></div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn btn-p" onclick="window._previsualizarInforme()">Vista previa PDF</button>
+            <button class="btn btn-gray" onclick="window._guardarHistoria()">Guardar historia</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Informe PDF -->
+<div class="overlay" id="modal-informe">
+  <div class="modal" style="max-width:860px">
+    <div class="modal-hdr">
+      <div class="modal-title">Informe podológico</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-p" onclick="window._imprimirInforme()">Descargar / Imprimir</button>
+        <button class="modal-x" onclick="closeM('modal-informe')">×</button>
+      </div>
+    </div>
+    <div style="padding:0 20px 20px"><div id="informe-preview" class="informe-doc"></div></div>
+  </div>
+</div>
+
+<!-- Modal Configuración -->
+<div class="overlay" id="modal-config">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-hdr"><div class="modal-title">Configuración</div><button class="modal-x" onclick="closeM('modal-config')">×</button></div>
+    <div class="modal-body">
+      <div class="settings-section">
+        <div class="settings-title">Datos profesionales</div>
+        <div class="fg"><label>Nombre del profesional</label><input type="text" id="cfg-nombre" placeholder="Pod. Erik Quiroz"></div>
+        <div class="fg"><label>Especialidad</label><input type="text" id="cfg-esp" placeholder="Podología clínica y quirúrgica"></div>
+        <div class="fg"><label>Registro profesional</label><input type="text" id="cfg-reg" placeholder="En trámite"></div>
+        <div class="form-row">
+          <div class="fg"><label>Teléfono</label><input type="text" id="cfg-tel" placeholder="+591 62458126"></div>
+          <div class="fg"><label>Redes sociales</label><input type="text" id="cfg-redes" placeholder="@quiropodscz"></div>
+        </div>
+        <div class="fg"><label>Ciudad</label><input type="text" id="cfg-ciudad" placeholder="Santa Cruz de la Sierra, Bolivia"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="settings-section">
+        <div class="settings-title">Cloudflare Worker (IA para informes)</div>
+        <div style="font-size:12px;color:var(--g500);margin-bottom:10px;line-height:1.6">URL del worker ya configurado: <code>https://quiropod-ai.johanquirozb.workers.dev</code></div>
+        <div class="fg"><label>URL del Worker</label><input type="text" id="cfg-worker" placeholder="https://quiropod-ai.johanquirozb.workers.dev"></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-gray" onclick="closeM('modal-config')">Cancelar</button>
+        <button class="btn btn-p" onclick="window._guardarConfig()">Guardar configuración</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Spinner y Toast -->
+<div id="global-spinner"><div class="spinner"></div></div>
+<div id="toast"></div>
+
+<!-- ════════════════════════════════════════════════════
+     SCRIPT PRINCIPAL (ES modules)
+════════════════════════════════════════════════════ -->
+<script type="module">
+import { supabase, WORKER_URL } from './js/supabase.js';
+import { LOGO_B64 } from './js/logo.js';
+import {
+  APP, MN, SERVICIOS, bs, fd, curM, monthOpts, fillMonthSelects, selM,
+  toast, openM, closeM, showSpinner, loadConfig, fillPacienteDatalist
+} from './js/app.js';
+import {
+  getConsultas, getAllConsultas, saveConsulta, deleteConsulta,
+  getCuotas, saveCuota, deleteCuota,
+  getEgresos, saveEgreso, deleteEgreso,
+  getFondos, saveFondo, deleteFondo,
+  getHistorias, getHistoria, saveHistoria, deleteHistoria,
+  getRecibos, getAllRecibos, saveRecibo, updateRecibo, deleteRecibo,
+  getConfig, setConfig, setConfigBatch, getPacientesNombres,
+  signIn, signOut, getSession, getPerfil, curMes
+} from './js/db.js';
+import { renderDashboard } from './js/dashboard.js';
+import {
+  renderAgenda, calPrev, calNext,
+  nuevaCita, editCita, guardaCita, borrarCita
+} from './js/agenda.js';
+
+// ── Logos ──────────────────────────────────────────────────────
+const IMG_SRC = 'data:image/jpeg;base64,' + LOGO_B64;
+['nav-logo','auth-logo-img'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.src = IMG_SRC;
+});
+
+// ── Páginas ────────────────────────────────────────────────────
+const ALL_PAGES = ['dashboard','agenda','registro','cuotas','egresos',
+  'fondos','membresias','margenes','historias','recibos'];
+
+window.go = function(name) {
+  ALL_PAGES.forEach(p => {
+    const el = document.getElementById('page-'+p);
+    if (el) el.classList.toggle('active', p === name);
+  });
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    const txt = t.textContent.toLowerCase().replace(/[^a-záéíóú]/g,'');
+    t.classList.toggle('active', txt.startsWith(name.slice(0,4).toLowerCase().replace(/[^a-záéíóú]/g,'')));
+  });
+  document.querySelectorAll('.bot-tab').forEach(t => {
+    t.classList.toggle('active', t.textContent.trim().toLowerCase().startsWith(name.slice(0,3)));
+  });
+  APP.currentPage = name;
+  ({
+    dashboard:  () => renderDashboard(),
+    agenda:     () => renderAgenda(),
+    registro:   () => window._renderRegistro(),
+    cuotas:     () => window._renderCuotas(),
+    egresos:    () => window._renderEgresos(),
+    fondos:     () => window._renderFondos(),
+    membresias: () => window._renderMembresias(),
+    margenes:   () => { window._renderMargenes(); window._calcSim(); },
+    historias:  () => window._renderLista(),
+    recibos:    () => window._renderRecibos(),
+  })[name]?.();
+};
+
+window.openM  = openM;
+window.closeM = closeM;
+
+// ── AUTH ───────────────────────────────────────────────────────
+async function initAuth() {
+  const session = await getSession();
+  if (session) {
+    await afterLogin(session);
+  } else {
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('app-screen').style.display  = 'none';
+  }
+}
+
+async function afterLogin(session) {
+  APP.session = session;
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display  = 'block';
+  document.getElementById('nav-user-name').textContent  = session.user.email;
+  await loadConfig();
+  initUI();
+}
+
+window._login = async function() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pass  = document.getElementById('auth-pass').value;
+  const errEl = document.getElementById('auth-err');
+  const ldEl  = document.getElementById('auth-loading');
+  errEl.style.display = 'none';
+  ldEl.style.display  = 'block';
+  try {
+    const data = await signIn(email, pass);
+    ldEl.style.display = 'none';
+    await afterLogin(data.session);
+  } catch(e) {
+    ldEl.style.display  = 'none';
+    errEl.style.display = 'block';
+    errEl.textContent   = 'Correo o contraseña incorrectos.';
+  }
+};
+
+window._logout = async function() {
+  if (!confirm('¿Cerrar sesión?')) return;
+  await signOut();
+  location.reload();
+};
+
+// Escuchar Enter en el login
+document.getElementById('auth-pass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') window._login();
+});
+
+// ── INIT UI ────────────────────────────────────────────────────
+async function initUI() {
+  fillMonthSelects('dash-month','reg-month','eg-month','e-mes','f-mes','rec-month');
+  fillServiciosSelects();
+  initDedos();
+  await refreshPacienteDatalist();
+  loadConfigUI();
+  go('dashboard');
+}
+
+function fillServiciosSelects() {
+  const opts = SERVICIOS.map(s =>
+    `<option value="${s.label}" data-m="${s.monto||''}">${s.label}${s.monto ? ' — Bs. '+s.monto : ''}</option>`
+  ).join('');
+  ['c-servicio','cita-servicio','h-servicio','r-servicio'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = `<option value="">— Seleccionar —</option>` + opts;
+  });
+}
+
+async function refreshPacienteDatalist() {
+  try {
+    const pacs = await getPacientesNombres();
+    ['c-pac-list','cq-pac-list','r-pac-list','h-pac-list','cita-pac-list'].forEach(id => {
+      const dl = document.getElementById(id);
+      if (dl) dl.innerHTML = pacs.map(p => `<option value="${p.paciente_nombre}">`).join('');
+    });
+  } catch(e) {}
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────
+window._renderDashboard = () => renderDashboard().catch(e => toast(e.message,'err'));
+
+// ── AGENDA ────────────────────────────────────────────────────
+window._calPrev    = calPrev;
+window._calNext    = calNext;
+window._nuevaCita  = nuevaCita;
+window._editCita   = editCita;
+window._guardaCita = guardaCita;
+window._deleteCita = borrarCita;
+
+// ── REGISTRO ───────────────────────────────────────────────────
+window._renderRegistro = async function() {
+  const mes  = selM('reg-month');
+  const wrap = document.getElementById('reg-wrap');
+  try {
+    const cons = await getConsultas(mes);
+    if (!cons.length) { wrap.innerHTML = `<div class="empty">Sin consultas en ${MN[parseInt(mes.split('-')[1])-1]}. Presioná "+ Nueva consulta".</div>`; return; }
+    const tot = cons.reduce((a,c) => a+Number(c.monto),0);
+    wrap.innerHTML = `<div class="scroll"><table class="tbl">
+      <thead><tr><th>Fecha</th><th>Paciente</th><th>Servicio</th><th>Monto</th><th>Ficha</th><th>Pago</th><th>Estado</th><th>Notas</th><th></th></tr></thead>
+      <tbody>${cons.map(c=>`<tr>
+        <td>${fd(c.fecha)}</td>
+        <td class="fw6">${c.paciente_nombre}</td>
+        <td><span class="badge b-teal">${c.servicio}</span></td>
+        <td class="fw6 c-teal">${bs(c.monto)}</td>
+        <td><span class="badge b-gray">#${c.ficha||'—'}</span></td>
+        <td>${c.pago||'—'}</td>
+        <td><span class="badge ${c.estado==='Realizada'?'b-green':c.estado==='Pendiente'?'b-amber':'b-gray'}">${c.estado||'—'}</span></td>
+        <td style="max-width:120px;font-size:11px;color:var(--g500)">${c.notas||'—'}</td>
+        <td><button class="btn-del" onclick="window._delConsulta('${c.id}')">✕</button></td>
+      </tr>`).join('')}</tbody>
+      <tfoot><tr><td colspan="3">Total — ${cons.length} consultas</td><td class="c-teal">${bs(tot)}</td><td colspan="5" style="font-size:11px;color:var(--g500)">Ticket prom. ${bs(Math.round(tot/cons.length))}</td></tr></tfoot>
+    </table></div>`;
+  } catch(e) { wrap.innerHTML = `<div class="empty">Error: ${e.message}</div>`; }
+};
+
+window._openConsulta = function() {
+  document.getElementById('c-fecha').value = new Date().toISOString().slice(0,10);
+  ['c-ficha','c-monto','c-notas'].forEach(id => { const el=document.getElementById(id); if(el)el.value=''; });
+  document.getElementById('c-transp').value = '30';
+  document.getElementById('c-servicio').value = '';
+  document.getElementById('c-zona').value = 'Zona 1';
+  document.getElementById('c-pago').value = 'Efectivo';
+  document.getElementById('c-estado').value = 'Realizada';
+  openM('modal-c');
+};
+
+window._saveConsulta = async function() {
+  const pac = document.getElementById('c-paciente').value.trim();
+  const svc = document.getElementById('c-servicio').value;
+  const monto = parseFloat(document.getElementById('c-monto').value) || 0;
+  if (!pac || !svc) { toast('Paciente y servicio son obligatorios','warn'); return; }
+  const mes = document.getElementById('c-fecha').value.slice(0,7);
+  try {
+    await saveConsulta({
+      fecha: document.getElementById('c-fecha').value,
+      paciente_nombre: pac,
+      ficha: parseInt(document.getElementById('c-ficha').value)||null,
+      servicio: svc,
+      monto,
+      transporte: parseFloat(document.getElementById('c-transp').value)||30,
+      zona: document.getElementById('c-zona').value,
+      pago: document.getElementById('c-pago').value,
+      estado: document.getElementById('c-estado').value,
+      notas: document.getElementById('c-notas').value||null,
+      mes,
+    });
+    closeM('modal-c');
+    toast('Consulta guardada ✓');
+    await refreshPacienteDatalist();
+    window._renderRegistro();
+  } catch(e) { toast('Error: '+e.message,'err'); }
+};
+
+window._delConsulta = async function(id) {
+  if (!confirm('¿Eliminar esta consulta?')) return;
+  try { await deleteConsulta(id); toast('Consulta eliminada'); window._renderRegistro(); }
+  catch(e) { toast('Error: '+e.message,'err'); }
+};
+
+// Hook botón nueva consulta
+document.querySelector('#page-registro .btn-p')?.addEventListener('click', () => window._openConsulta());
+
+// Auto-fill monto al seleccionar servicio en consulta
+document.getElementById('c-servicio')?.addEventListener('change', function() {
+  const opt = this.options[this.selectedIndex];
+  const m = opt?.dataset?.m;
+  if (m) document.getElementById('c-monto').value = m;
+});
+
+// ── CUOTAS ────────────────────────────────────────────────────
+window._calcCuota = function() {
+  const tot = parseFloat(document.getElementById('cq-total').value)||0;
+  const num = parseInt(document.getElementById('cq-num').value)||1;
+  document.getElementById('cq-vc').value = num ? `Bs. ${(tot/num).toFixed(2)}` : '';
+};
+
+window._saveCuota = async function() {
+  const pac = document.getElementById('cq-pac').value.trim();
+  const tot = parseFloat(document.getElementById('cq-total').value)||0;
+  const num = parseInt(document.getElementById('cq-num').value)||4;
+  if (!pac||!tot) { toast('Completá paciente y total','warn'); return; }
+  const pagos = Array(num).fill('Pendiente');
+  pagos[0] = document.getElementById('cq-fecha').value;
+  try {
+    await saveCuota({
+      paciente_nombre: pac,
+      ficha: parseInt(document.getElementById('cq-ficha').value)||null,
+      tratamiento: document.getElementById('cq-trat').value,
+      fecha_inicio: document.getElementById('cq-fecha').value,
+      total: tot, num_cuotas: num, valor_cuota: tot/num,
+      pagos, nota: document.getElementById('cq-nota').value||null,
+    });
+    closeM('modal-cq'); toast('Cuota guardada ✓'); window._renderCuotas();
+  } catch(e) { toast('Error: '+e.message,'err'); }
+};
+
+window._renderCuotas = async function() {
+  const cuotas = await getCuotas().catch(()=>[]);
+  let tPend=0,tCob=0,act=0,comp=0;
+  cuotas.forEach(cq=>{
+    const p=(cq.pagos||[]).filter(x=>x==='Pendiente').length*cq.valor_cuota;
+    const c=(cq.pagos||[]).filter(x=>x!=='Pendiente').length*cq.valor_cuota;
+    tPend+=p; tCob+=c; if(p>0)act++; else comp++;
+  });
+  document.getElementById('cq-pend-kpi').textContent=bs(tPend);
+  document.getElementById('cq-cob-kpi').textContent=bs(tCob);
+  document.getElementById('cq-act-kpi').textContent=act;
+  document.getElementById('cq-comp-kpi').textContent=comp;
+  const wrap=document.getElementById('cuotas-wrap');
+  if(!cuotas.length){wrap.innerHTML='<div class="empty">Sin tratamientos en cuotas. Presioná "+ Nueva cuota".</div>';return;}
+  const maxC=Math.max(...cuotas.map(cq=>cq.num_cuotas));
+  wrap.innerHTML=`<div class="scroll"><table class="tbl">
+    <thead><tr><th>Paciente</th><th>Ficha</th><th>Tratamiento</th><th>Inicio</th><th>Total</th><th>Bs./cuota</th>
+    ${Array.from({length:maxC},(_,i)=>`<th>Cuota ${i+1}</th>`).join('')}
+    <th>Cobrado</th><th>Pendiente</th><th></th></tr></thead>
+    <tbody>${cuotas.map(cq=>{
+      const cob=(cq.pagos||[]).filter(x=>x!=='Pendiente').length*cq.valor_cuota;
+      const pend=(cq.pagos||[]).filter(x=>x==='Pendiente').length*cq.valor_cuota;
+      const cells=Array.from({length:maxC},(_,i)=>{
+        if(i>=cq.num_cuotas)return'<td><span class="cq-cell cq-na">—</span></td>';
+        if((cq.pagos||[])[i]==='Pendiente')return`<td><button class="btn-pagar" onclick="window._pagarCuota('${cq.id}',${i})">Pendiente ▶</button></td>`;
+        return`<td><span class="cq-cell cq-ok">${fd((cq.pagos||[])[i])}</span></td>`;
+      }).join('');
+      return`<tr><td class="fw6">${cq.paciente_nombre}</td><td><span class="badge b-gray">#${cq.ficha||'—'}</span></td>
+        <td>${cq.tratamiento}</td><td>${fd(cq.fecha_inicio)}</td><td class="fw6">${bs(cq.total)}</td><td>${bs(cq.valor_cuota)}</td>
+        ${cells}
+        <td class="fw6 c-teal">${bs(cob)}</td><td class="fw6 ${pend>0?'c-red':'c-teal'}">${bs(pend)}</td>
+        <td><button class="btn-del" onclick="window._delCuota('${cq.id}')">✕</button></td></tr>`;
+    }).join('')}</tbody></table></div>`;
+};
+
+window._pagarCuota = async function(cqId, idx) {
+  const cuotas = await getCuotas().catch(()=>[]);
+  const cq = cuotas.find(c=>c.id===cqId);
+  if(!cq) return;
+  const fecha = prompt(`Fecha de cobro cuota ${idx+1} — ${cq.paciente_nombre} (AAAA-MM-DD):`, new Date().toISOString().slice(0,10));
+  if(!fecha) return;
+  const pagos = [...(cq.pagos||[])];
+  pagos[idx] = fecha;
+  try { await saveCuota({...cq, pagos}); toast('Cuota marcada como cobrada ✓'); window._renderCuotas(); }
+  catch(e) { toast('Error: '+e.message,'err'); }
+};
+
+window._delCuota = async function(id) {
+  if(!confirm('¿Eliminar esta cuota?')) return;
+  try { await deleteCuota(id); toast('Cuota eliminada'); window._renderCuotas(); }
+  catch(e) { toast('Error','err'); }
+};
+
+// ── EGRESOS ───────────────────────────────────────────────────
+let chEg;
+window._renderEgresos = async function() {
+  const mes = selM('eg-month');
+  const egs = await getEgresos(mes).catch(()=>[]);
+  const tot = egs.reduce((a,e)=>a+Number(e.monto),0);
+  document.getElementById('eg-total').textContent = bs(tot);
+  const list = document.getElementById('eg-list');
+  list.innerHTML = egs.map(e=>`
+    <div class="eq-row">
+      <div><div class="fw6" style="font-size:13px">${e.descripcion||e.categoria}</div>
+      <div style="font-size:11px;color:var(--g500)">${e.categoria} · ${fd(e.fecha)}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="fw6 c-red">${bs(e.monto)}</span>
+        <button class="btn-del" onclick="window._delEgreso('${e.id}')">✕</button>
+      </div>
+    </div>`).join('') || '<div class="empty">Sin egresos este mes.</div>';
+  const cats = {};
+  egs.forEach(e=>{ cats[e.categoria]=(cats[e.categoria]||0)+Number(e.monto); });
+  if(chEg) chEg.destroy();
+  if(Object.keys(cats).length) chEg = new window.Chart(document.getElementById('chEg'),{
+    type:'doughnut',
+    data:{labels:Object.keys(cats),datasets:[{data:Object.values(cats),backgroundColor:['#1D9E75','#5DCAA5','#D85A30','#EF9F27','#3B82F6','#9FE1CB'],borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}}}}
+  });
+};
+
+window._saveEgreso = async function() {
+  const monto = parseFloat(document.getElementById('e-monto').value)||0;
+  const cat   = document.getElementById('e-cat').value;
+  if(!monto) { toast('Ingresá un monto','warn'); return; }
+  const mes = document.getElementById('e-mes').value || curM();
+  try {
+    await saveEgreso({
+      fecha: document.getElementById('e-fecha').value || new Date().toISOString().slice(0,10),
+      categoria: cat,
+      descripcion: document.getElementById('e-desc').value||null,
+      monto, mes, recibo: document.getElementById('e-rec').value||null,
+    });
+    closeM('modal-e'); toast('Egreso guardado ✓'); window._renderEgresos();
+  } catch(e) { toast('Error: '+e.message,'err'); }
+};
+
+window._delEgreso = async function(id) {
+  if(!confirm('¿Eliminar este egreso?')) return;
+  try { await deleteEgreso(id); toast('Eliminado'); window._renderEgresos(); }
+  catch(e) { toast('Error','err'); }
+};
+
+document.getElementById('modal-e').querySelector('.btn-p')?.addEventListener('click', ()=>{
+  document.getElementById('e-fecha').value = new Date().toISOString().slice(0,10);
+});
+
+// ── FONDOS ────────────────────────────────────────────────────
+const META_BR = 5177, META_US = 7600;
+window._renderFondos = async function() {
+  const fondos = await getFondos().catch(()=>[]);
+  const brT = fondos.filter(f=>f.tipo==='brasil').reduce((a,f)=>a+Number(f.monto),0);
+  const usT = fondos.filter(f=>f.tipo==='usa').reduce((a,f)=>a+Number(f.monto),0);
+  document.getElementById('f-br-amt').textContent = bs(brT);
+  document.getElementById('f-us-amt').textContent = bs(usT);
+  document.getElementById('f-br-bar').style.width = Math.min(100,brT/META_BR*100)+'%';
+  document.getElementById('f-us-bar').style.width = Math.min(100,usT/META_US*100)+'%';
+  const hist = document.getElementById('f-hist');
+  hist.innerHTML = fondos.map(f=>`
+    <div class="eq-row">
+      <div><div class="fw6" style="font-size:13px">${f.nota||f.tipo}</div>
+      <div style="font-size:11px;color:var(--g500)">${f.tipo==='brasil'?'🇧🇷 Brasil':'🇺🇸 USA'} · ${f.mes}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="fw6 c-teal">${bs(f.monto)}</span>
+        <button class="btn-del" onclick="window._delFondo('${f.id}')">✕</button>
+      </div>
+    </div>`).join('') || '<div class="empty">Sin aportes registrados.</div>';
+};
+
+window._saveFondo = async function() {
+  const monto = parseFloat(document.getElementById('f-monto').value)||0;
+  if(!monto) { toast('Ingresá un monto','warn'); return; }
+  try {
+    await saveFondo({
+      tipo: document.getElementById('f-tipo').value,
+      mes: document.getElementById('f-mes').value,
+      monto,
+      nota: document.getElementById('f-nota').value||null,
+    });
+    toast('Aporte guardado ✓'); window._renderFondos();
+    document.getElementById('f-monto').value='';
+    document.getElementById('f-nota').value='';
+  } catch(e) { toast('Error: '+e.message,'err'); }
+};
+
+window._delFondo = async function(id) {
+  if(!confirm('¿Eliminar este aporte?')) return;
+  try { await deleteFondo(id); toast('Eliminado'); window._renderFondos(); }
+  catch(e) { toast('Error','err'); }
+};
+
+// ── MEMBRESÍAS ────────────────────────────────────────────────
+window._renderMembresias = function() {
+  const planes = [
+    { name:'Cuidado Esencial', precio:85, items:['1 pedicure clínico/mes','Horario reservado fijo','10% desc. en adicionales'] },
+    { name:'Cuidado Plus', precio:165, ahorro:20, items:['1 pedicure + 1 trat./mes','15% desc. en adicionales','Consultas WA ilimitadas','Prioridad de agenda'], badge:'Más popular' },
+    { name:'Cuidado Total — Élite', precio:300, ahorro:70, items:['2 visitas completas/mes','20% desc. en adicionales','Reporte mensual del estado','Acceso prioritario a novedades'] },
+    { name:'Pie Diabético Especializado', precio:580, ahorro:100, items:['4 sesiones pie diabético/mes','Revisión vascular/sensitiva','Registro clínico detallado','Atención urgencia misma semana'] },
+    { name:'Uñero Controlado ★', precio:200, items:['Sesión 1 — tratamiento completo','Sesión 2 a los 7 días — curación','Seguimiento WA incluido'] },
+  ];
+  document.getElementById('mem-cards').innerHTML = planes.map(p=>`
+    <div class="mem-card">
+      ${p.badge?`<div style="font-size:10px;background:var(--t600);color:#fff;padding:2px 8px;border-radius:10px;display:inline-block;margin-bottom:6px">${p.badge}</div>`:''}
+      <div class="mem-name">${p.name}</div>
+      <div class="mem-precio">Bs. ${p.precio}/mes</div>
+      ${p.ahorro?`<div style="font-size:11px;color:var(--t600)">Ahorrás Bs. ${p.ahorro}</div>`:''}
+      <ul class="mem-items">${p.items.map(i=>`<li>${i}</li>`).join('')}</ul>
+    </div>`).join('');
+
+  const paquetes = [
+    { name:'Pack Bienestar del Abuelo', precio:220, ahorro:25, nicho:'Adultos mayores', items:'Valoración + pedicure + callosidades' },
+    { name:'Pack Pie Diabético Seguro', precio:380, ahorro:40, nicho:'Diabéticos', items:'Valoración + 2 sesiones pie diabético' },
+    { name:'Pack Pies de Reina', precio:680, ahorro:95, nicho:'Mujeres profesionales', items:'3 pedicures + estética podológica' },
+    { name:'Pack Atleta Activo', precio:375, ahorro:40, nicho:'Deportistas', items:'Valoración + 2 pedicures + pie atleta + reflexología' },
+    { name:'Pack Uñero Sin Vuelta Atrás', precio:460, ahorro:50, nicho:'Uñero recurrente', items:'Anestesia + órtesis + 2 revisiones' },
+    { name:'Pack Institucional Mensual', precio:650, ahorro:340, nicho:'Hogares de ancianos', items:'Pedicure × 6 residentes + valoración' },
+    { name:'Pack Regalo Quiropod', precio:155, ahorro:15, nicho:'Días especiales', items:'1 pedicure + 1 reflexología' },
+    { name:'Pack Familia Pies Sanos', precio:260, ahorro:40, nicho:'Familias con niños', items:'2 pedicures adulto + podopediatría' },
+  ];
+  document.getElementById('pack-list').innerHTML = paquetes.map(p=>`
+    <div class="pack-item">
+      <div><div class="pack-name">${p.name}</div><div class="pack-desc">${p.nicho} · ${p.items} · Ahorrás Bs. ${p.ahorro}</div></div>
+      <div class="pack-precio">Bs. ${p.precio}</div>
+    </div>`).join('');
+};
+
+// ── MÁRGENES ─────────────────────────────────────────────────
+let chMg;
+const MARGENES_DATA = [
+  { name:'Matricectomía 1 lat.', precio:700, ins:60 },
+  { name:'Uñero + anestesia',    precio:300, ins:50 },
+  { name:'Pie diabético',        precio:170, ins:30 },
+  { name:'Uñero 1 pie',          precio:170, ins:35 },
+  { name:'Hongos en uñas',       precio:120, ins:30 },
+  { name:'Pedicure clínico',     precio:85,  ins:30 },
+  { name:'Valoración',           precio:80,  ins:25 },
+];
+
+window._renderMargenes = function() {
+  const list = document.getElementById('mg-list');
+  list.innerHTML = MARGENES_DATA.map(s=>{
+    const mg = s.precio - s.ins;
+    const pct = Math.round(mg/s.precio*100);
+    const color = pct>=80?'var(--t600)':pct>=70?'var(--amber)':'var(--red)';
+    return `<div class="mg-row">
+      <span class="mg-name">${s.name}</span>
+      <div class="mg-bar-wrap"><div class="mg-bar" style="width:${pct}%;background:${color}"></div></div>
+      <span class="mg-pct" style="color:${color}">${pct}%</span>
+      <span class="mg-bs">${bs(mg)}</span>
+    </div>`;
+  }).join('');
+  if(chMg) chMg.destroy();
+  chMg = new window.Chart(document.getElementById('chMg'),{
+    type:'bar',
+    data:{
+      labels: MARGENES_DATA.map(s=>s.name),
+      datasets:[{label:'Margen %',data:MARGENES_DATA.map(s=>Math.round((s.precio-s.ins)/s.precio*100)),backgroundColor:'rgba(29,158,117,.75)',borderColor:'#1D9E75',borderWidth:1.5,borderRadius:4}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,ticks:{font:{size:10}}},x:{ticks:{font:{size:9}}}},indexAxis:'y'}
+  });
+};
+
+window._calcSim = function() {
+  const p = parseInt(document.getElementById('sim-p')?.value)||0;
+  const t = parseInt(document.getElementById('sim-t')?.value)||0;
+  const s = parseInt(document.getElementById('sim-s')?.value)||4;
+  const ing = p*t*s; const ins = p*s*30; const mg = ing-ins-1375; const neto = mg-4000;
+  const color = neto>=0?'var(--t700)':'var(--red)';
+  document.getElementById('sim-out').innerHTML = `
+    <div class="eq-row"><span class="c-muted">Pacientes/mes</span><span class="fw6">${p*s}</span></div>
+    <div class="eq-row"><span class="c-muted">Ingresos brutos</span><span class="fw6">${bs(ing)}</span></div>
+    <div class="eq-row"><span class="c-muted">Insumos variables</span><span class="fw6 c-red">${bs(ins)}</span></div>
+    <div class="eq-row"><span class="c-muted">Costos fijos</span><span class="fw6 c-red">Bs. 1.375</span></div>
+    <div class="eq-row"><span class="c-muted">Margen operativo</span><span class="fw6">${bs(mg)}</span></div>
+    <div class="eq-row" style="background:var(--t50);margin:0 -4px;padding:7px 4px;border-radius:6px;border-bottom:none">
+      <span class="c-muted">Resultado neto (con sueldo Bs.4k)</span>
+      <span class="fw6" style="color:${color}">${bs(neto)}</span>
+    </div>`;
+};
+
+// ── HISTORIAS CLÍNICAS ───────────────────────────────────────
+let editandoHistId = null, fotosActuales = [];
+
+function initDedos() {
+  const container = document.getElementById('dedos-container');
+  if (!container) return;
+  const lados = [
+    { id:'der', label:'🦶 Pie derecho' },
+    { id:'izq', label:'🦶 Pie izquierdo' },
+  ];
+  const dedos = [
+    {num:1,name:'Hallux (1°)',iso:{der:'11',izq:'21'}},
+    {num:2,name:'2° dedo',    iso:{der:'12',izq:'22'}},
+    {num:3,name:'3° dedo',    iso:{der:'13',izq:'23'}},
+    {num:4,name:'4° dedo',    iso:{der:'14',izq:'24'}},
+    {num:5,name:'5° dedo',    iso:{der:'15',izq:'25'}},
+  ];
+  container.innerHTML = lados.map(l=>`
+    <div class="pie-block">
+      <div class="pie-label">${l.label}</div>
+      ${dedos.map(d=>`
+        <div class="dedo-row">
+          <span class="dedo-num">${d.iso[l.id]}</span>
+          <span class="dedo-name">${d.name}<small>ISO ${d.iso[l.id]}</small></span>
+          <div class="dedo-check">
+            <input type="checkbox" id="proc-${l.id}-${d.num}" onchange="window._toggleDedo('${l.id}',${d.num})">
+            <select class="dedo-tratamiento" id="proc-sel-${l.id}-${d.num}" disabled>
+              <option value="—">Procedimiento</option>
+              <option>Corte técnico</option><option>Onicocriptosis</option>
+              <option>Matricectomía lateral</option><option>Matricectomía bilateral</option>
+              <option>Desincurvación</option><option>Órtesis</option>
+              <option>Onicomicosis</option><option>Heloma subungueal</option>
+              <option>Trauma ungueal</option>
+            </select>
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+window._toggleDedo = function(lado, num) {
+  const cb  = document.getElementById(`proc-${lado}-${num}`);
+  const sel = document.getElementById(`proc-sel-${lado}-${num}`);
+  if(sel) sel.disabled = !cb?.checked;
+};
+
+function getDedosTratados() {
+  const lados = ['der','izq'];
+  const nombres = {1:'Hallux (1°)',2:'2° dedo',3:'3° dedo',4:'4° dedo',5:'5° dedo'};
+  const isos = {der:{1:'11',2:'12',3:'13',4:'14',5:'15'},izq:{1:'21',2:'22',3:'23',4:'24',5:'25'}};
+  const result = [];
+  lados.forEach(l=>{
+    for(let i=1;i<=5;i++){
+      const cb  = document.getElementById(`proc-${l}-${i}`);
+      const sel = document.getElementById(`proc-sel-${l}-${i}`);
+      if(cb?.checked && sel?.value && sel.value !== '—') {
+        result.push({ pieza: isos[l][i], nombre: nombres[i], lado: l, procedimiento: sel.value });
+      }
+    }
+  });
+  return result;
+}
+
+function setDedosTratados(dedos) {
+  const isoMap = {'11':['der',1],'12':['der',2],'13':['der',3],'14':['der',4],'15':['der',5],'21':['izq',1],'22':['izq',2],'23':['izq',3],'24':['izq',4],'25':['izq',5]};
+  dedos.forEach(d=>{
+    const [lado,num] = isoMap[d.pieza]||[];
+    if(!lado) return;
+    const cb  = document.getElementById(`proc-${lado}-${num}`);
+    const sel = document.getElementById(`proc-sel-${lado}-${num}`);
+    if(cb) cb.checked = true;
+    if(sel) { sel.disabled = false; sel.value = d.procedimiento; }
+  });
+}
+
+function resetDedos() {
+  ['der','izq'].forEach(l=>{
+    for(let i=1;i<=5;i++){
+      const cb  = document.getElementById(`proc-${l}-${i}`);
+      const sel = document.getElementById(`proc-sel-${l}-${i}`);
+      if(cb) cb.checked = false;
+      if(sel) { sel.disabled = true; sel.value = '—'; }
+    }
+  });
+}
+
+window._agregarFotos = function(input) {
+  const tipo = document.getElementById('foto-tipo').value;
+  Array.from(input.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => { fotosActuales.push({tipo,nombre:file.name,data:e.target.result,mime:file.type}); renderFotos(); };
+    reader.readAsDataURL(file);
+  });
+  input.value='';
+};
+
+function renderFotos() {
+  document.getElementById('fotos-grid').innerHTML = fotosActuales.map((f,i)=>`
+    <div class="foto-thumb">
+      ${f.mime?.startsWith('image/')?`<img src="${f.data}" alt="${f.tipo}">`:
+        `<div style="width:100%;height:100%;background:var(--t50);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--t700)">📄 ${f.nombre.slice(0,15)}</div>`}
+      <button class="foto-del" onclick="window._elimFoto(${i})">×</button>
+    </div>`).join('');
+}
+
+window._elimFoto = function(i) { fotosActuales.splice(i,1); renderFotos(); };
+
+// Auto-fill al elegir paciente en historia
+window._autoFillPacHist = async function() {
+  const nombre = document.getElementById('h-nombre')?.value?.trim();
+  if (!nombre || nombre.length < 3) return;
+  try {
+    const hs = await getHistorias(nombre);
+    if (hs.length) {
+      const h = hs[0];
+      const map = { nacimiento:'h-nacimiento', ci:'h-ci', telefono:'h-tel', direccion:'h-dir' };
+      Object.entries(map).forEach(([campo,id])=>{
+        const el=document.getElementById(id);
+        if(el && h[campo] && !el.value) el.value=h[campo];
+      });
+      if(!document.getElementById('h-diabetes').value || document.getElementById('h-diabetes').value==='No') {
+        if(h.diabetes) document.getElementById('h-diabetes').value=h.diabetes;
+      }
+    }
+  } catch(e){}
+};
+
+window._openNuevaHistoria = async function() {
+  editandoHistId = null;
+  document.getElementById('modal-historia-title').textContent = 'Nueva historia clínica';
+  limpiarHistoria();
+  openM('modal-historia');
+  switchTab('tab-datos');
+};
+
+function limpiarHistoria() {
+  ['h-ficha','h-nacimiento','h-ci','h-tel','h-dir','h-alergias','h-medicacion','h-medico',
+   'h-motivo','h-hallazgos','h-diagnostico','h-grado','h-tratamiento','h-insumos',
+   'h-obs','h-proxima','h-monto','h-notas-piezas','h-nombre'].forEach(id=>{
+    const el=document.getElementById(id); if(el)el.value='';
+  });
+  document.getElementById('h-fecha').value = new Date().toISOString().slice(0,10);
+  document.getElementById('h-diabetes').value='No';
+  document.getElementById('h-hta').value='No';
+  document.getElementById('h-anestesia').value='No se usó';
+  document.getElementById('h-tolerancia').value='Muy buena';
+  document.getElementById('h-servicio').value='';
+  resetDedos(); fotosActuales=[]; renderFotos();
+  document.getElementById('ai-panel').style.display='none';
+  document.getElementById('informe-acciones').style.display='none';
+}
+
+window._guardarHistoria = async function() {
+  const nombre = document.getElementById('h-nombre').value.trim();
+  if(!nombre) { toast('El nombre es obligatorio','warn'); return; }
+  const historia = {
+    fecha: document.getElementById('h-fecha').value,
+    ficha: parseInt(document.getElementById('h-ficha').value)||null,
+    paciente_nombre: nombre,
+    nacimiento: document.getElementById('h-nacimiento').value||null,
+    ci: document.getElementById('h-ci').value||null,
+    telefono: document.getElementById('h-tel').value||null,
+    direccion: document.getElementById('h-dir').value||null,
+    diabetes: document.getElementById('h-diabetes').value,
+    hta: document.getElementById('h-hta').value,
+    alergias: document.getElementById('h-alergias').value||null,
+    medicacion: document.getElementById('h-medicacion').value||null,
+    medico: document.getElementById('h-medico').value||null,
+    motivo: document.getElementById('h-motivo').value||null,
+    servicio: document.getElementById('h-servicio').value||null,
+    hallazgos: document.getElementById('h-hallazgos').value||null,
+    diagnostico: document.getElementById('h-diagnostico').value||null,
+    grado: document.getElementById('h-grado').value||null,
+    tratamiento: document.getElementById('h-tratamiento').value||null,
+    insumos: document.getElementById('h-insumos').value||null,
+    anestesia: document.getElementById('h-anestesia').value,
+    tolerancia: document.getElementById('h-tolerancia').value,
+    indicaciones: document.getElementById('h-indicaciones')?.value||null,
+    proxima_cita: document.getElementById('h-proxima').value||null,
+    monto: parseFloat(document.getElementById('h-monto').value)||null,
+    observaciones: document.getElementById('h-obs').value||null,
+    notas_piezas: document.getElementById('h-notas-piezas').value||null,
+    dedos: getDedosTratados(),
+    informe_texto: document.getElementById('informe-texto')?.value||null,
+  };
+  if(editandoHistId) historia.id = editandoHistId;
+  try {
+    await saveHistoria(historia);
+    closeM('modal-historia');
+    toast(editandoHistId?'Historia actualizada ✓':'Historia guardada ✓');
+    await refreshPacienteDatalist();
+    window._renderLista();
+  } catch(e) { toast('Error: '+e.message,'err'); }
+};
+
+window._renderLista = async function() {
+  const q = document.getElementById('buscador')?.value||'';
+  const historias = await getHistorias(q).catch(()=>[]);
+  document.getElementById('hc-count').textContent = `${historias.length} paciente${historias.length!==1?'s':''} registrado${historias.length!==1?'s':''}`;
+  const wrap = document.getElementById('lista-wrap');
+  if(!historias.length){ wrap.innerHTML=`<div class="empty">${q?'Sin resultados para "'+q+'"':'Sin historias. Presioná "+ Nueva historia".'}</div>`; return; }
+  wrap.innerHTML=`<div class="scroll"><table class="tbl">
+    <thead><tr><th>Ficha</th><th>Fecha</th><th>Paciente</th><th>Servicio</th><th>Diagnóstico</th><th>Piezas</th><th>Informe</th><th></th></tr></thead>
+    <tbody>${historias.map(h=>`<tr>
+      <td><span class="badge b-gray">#${h.ficha||'—'}</span></td>
+      <td style="white-space:nowrap">${fd(h.fecha)}</td>
+      <td><div class="fw6">${h.paciente_nombre}</div><div style="font-size:11px;color:var(--g500)">${h.telefono||''}</div></td>
+      <td><span class="badge b-teal" style="white-space:normal;max-width:160px">${h.servicio||'—'}</span></td>
+      <td style="font-size:12px;max-width:180px">${h.diagnostico||'—'}</td>
+      <td>${h.dedos?.length?`<span class="badge b-blue">${h.dedos.length} pieza${h.dedos.length!==1?'s':''}</span>`:'<span class="badge b-gray">—</span>'}</td>
+      <td>${h.informe_texto?'<span class="badge b-green">✓ Listo</span>':'<span class="badge b-amber">Pendiente</span>'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-gray btn-sm" style="margin-right:4px" onclick="window._editHistoria('${h.id}')">Editar</button>
+        <button class="btn btn-p btn-sm" style="margin-right:4px" onclick="window._abrirInforme('${h.id}')">PDF</button>
+        <button class="btn btn-danger btn-sm" onclick="window._delHistoria('${h.id}')">✕</button>
+      </td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+};
+
+window._editHistoria = async function(id) {
+  const h = await getHistoria(id).catch(()=>null);
+  if(!h) return;
+  editandoHistId = id;
+  document.getElementById('modal-historia-title').textContent = 'Editar — '+h.paciente_nombre;
+  limpiarHistoria();
+  const campStr=['fecha','paciente_nombre','nacimiento','ci','telefono','direccion',
+    'alergias','medicacion','medico','motivo','hallazgos','diagnostico','grado',
+    'tratamiento','insumos','observaciones','notas_piezas'];
+  campStr.forEach(c=>{
+    const map={paciente_nombre:'h-nombre',nacimiento:'h-nacimiento',ci:'h-ci',
+      telefono:'h-tel',direccion:'h-dir',observaciones:'h-obs',notas_piezas:'h-notas-piezas'};
+    const id=map[c]||'h-'+c;
+    const el=document.getElementById(id); if(el&&h[c])el.value=h[c];
+  });
+  ['diabetes','hta','anestesia','tolerancia','servicio'].forEach(c=>{
+    const el=document.getElementById('h-'+c); if(el&&h[c])el.value=h[c];
+  });
+  if(h.proxima_cita) document.getElementById('h-proxima').value=h.proxima_cita;
+  if(h.monto) document.getElementById('h-monto').value=h.monto;
+  if(h.ficha) document.getElementById('h-ficha').value=h.ficha;
+  if(h.dedos?.length) setDedosTratados(h.dedos);
+  fotosActuales=h.fotos||[]; renderFotos();
+  if(h.informe_texto){ document.getElementById('informe-texto').value=h.informe_texto; document.getElementById('informe-acciones').style.display='block'; }
+  openM('modal-historia'); switchTab('tab-datos');
+};
+
+window._delHistoria = async function(id) {
+  if(!confirm('¿Eliminar esta historia clínica? Esta acción no se puede deshacer.')) return;
+  try { await deleteHistoria(id); toast('Historia eliminada'); window._renderLista(); }
+  catch(e) { toast('Error','err'); }
+};
+
+window.switchTab = function(tabId) {
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(tabId)?.classList.add('active');
+  const idx=['tab-datos','tab-clinica','tab-piezas','tab-fotos','tab-informe'].indexOf(tabId);
+  document.querySelectorAll('.tab')[idx]?.classList.add('active');
+};
+
+// ── Informe IA ────────────────────────────────────────────────
+window._generarInforme = async function() {
+  const workerUrl = APP.config.workerUrl || WORKER_URL;
+  const panel = document.getElementById('ai-panel');
+  const dot   = document.getElementById('ai-dot');
+  const stTxt = document.getElementById('ai-status-txt');
+  const result= document.getElementById('ai-result');
+  const acciones=document.getElementById('informe-acciones');
+  panel.style.display='block'; result.style.display='none'; acciones.style.display='none';
+  dot.className='ai-dot loading'; stTxt.textContent='Procesando datos clínicos...';
+  const dedos=getDedosTratados();
+  const nombre=document.getElementById('h-nombre').value;
+  const prompt=buildPrompt(nombre,dedos);
+  try {
+    const resp=await fetch(workerUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
+    const data=await resp.json();
+    const text=data.content?.[0]?.text||data.result||'Error al procesar';
+    dot.className='ai-dot'; dot.style.background='var(--t600)'; stTxt.textContent='Informe generado correctamente';
+    result.textContent=text; result.style.display='block';
+    document.getElementById('informe-texto').value=text;
+    acciones.style.display='block';
+  } catch(e) { dot.className='ai-dot'; dot.style.background='var(--red)'; stTxt.textContent='Error: '+e.message; }
+};
+
+function buildPrompt(nombre,dedos) {
+  const g=id=>document.getElementById(id)?.value||'';
+  const dt=dedos.length>0?dedos.map(d=>`- ${d.pieza} (${d.nombre}): ${d.procedimiento}`).join('\n'):'No se registraron piezas específicas.';
+  return `Sos un podólogo clínico experto. Generá un informe podológico profesional completo en español, en prosa estructurada. Tono técnico-clínico para entregar al paciente o médico referidor.
+
+DATOS:
+Paciente: ${nombre} | Fecha: ${g('h-fecha')} | CI: ${g('h-ci')} | Nacimiento: ${g('h-nacimiento')}
+Antecedentes: Diabetes ${g('h-diabetes')} | HTA: ${g('h-hta')} | Alergias: ${g('h-alergias')||'ninguna'} | Medicación: ${g('h-medicacion')||'ninguna'}
+Médico tratante: ${g('h-medico')||'No refiere'}
+Motivo: ${g('h-motivo')} | Servicio: ${g('h-servicio')}
+Hallazgos: ${g('h-hallazgos')} | Diagnóstico: ${g('h-diagnostico')} ${g('h-grado')?'— '+g('h-grado'):''}
+Tratamiento: ${g('h-tratamiento')} | Insumos: ${g('h-insumos')||'estándar'}
+Anestesia: ${g('h-anestesia')} | Tolerancia: ${g('h-tolerancia')}
+Piezas:\n${dt}
+Indicaciones: ${g('h-indicaciones')||'No especificadas'}
+Próxima cita: ${g('h-proxima')||'Por coordinar'} | Observaciones: ${g('h-obs')||'Ninguna'}
+
+ESTRUCTURA (usá exactamente estos títulos):
+1. MOTIVO DE CONSULTA
+2. ANTECEDENTES MÉDICOS RELEVANTES
+3. HALLAZGOS AL EXAMEN CLÍNICO
+4. DIAGNÓSTICO PODOLÓGICO
+5. PROCEDIMIENTO REALIZADO
+6. PIEZAS TRATADAS
+7. INDICACIONES POST-TRATAMIENTO
+8. PRONÓSTICO Y SEGUIMIENTO
+9. RECOMENDACIONES AL MÉDICO TRATANTE
+
+Tercera persona, terminología anatómica correcta, máximo 600 palabras. Sin fecha ni firma.`;
+}
+
+window._abrirInforme = async function(id) {
+  const h = await getHistoria(id).catch(()=>null);
+  if(!h) return;
+  if(!h.informe_texto){ toast('Sin informe generado. Abrí y usá la pestaña Informe IA','warn'); return; }
+  renderInformeDoc(h);
+  openM('modal-informe');
+};
+
+window._previsualizarInforme = function() {
+  const datos = {
+    paciente_nombre: document.getElementById('h-nombre').value,
+    fecha: document.getElementById('h-fecha').value,
+    ficha: document.getElementById('h-ficha').value,
+    ci: document.getElementById('h-ci').value,
+    nacimiento: document.getElementById('h-nacimiento').value,
+    servicio: document.getElementById('h-servicio').value,
+    diagnostico: document.getElementById('h-diagnostico').value,
+    informe_texto: document.getElementById('informe-texto').value,
+    dedos: getDedosTratados(),
+    fotos: fotosActuales,
+    proxima_cita: document.getElementById('h-proxima').value,
+  };
+  renderInformeDoc(datos);
+  openM('modal-informe');
+};
+
+function renderInformeDoc(h) {
+  const cfg=APP.config;
+  const prof=cfg.nombre||'Pod. Erik Quiroz';
+  const reg=cfg.registro||'En trámite';
+  const esp=cfg.especialidad||'Podología clínica y quirúrgica';
+  const tel=cfg.tel||'+591 62458126';
+  const redes=cfg.redes||'@quiropodscz';
+  const ciudad=cfg.ciudad||'Santa Cruz de la Sierra, Bolivia';
+  const hoy=new Date().toLocaleDateString('es-BO',{year:'numeric',month:'long',day:'numeric'});
+  const fotosHtml=(h.fotos||[]).filter(f=>f.mime?.startsWith('image/')).slice(0,6).map(f=>`<img class="inf-foto" src="${f.data}" alt="${f.tipo}">`).join('');
+  const dedosHtml=h.dedos?.length?`<table class="dedos-table"><thead><tr><th>Pieza ISO</th><th>Nombre</th><th>Lado</th><th>Procedimiento</th></tr></thead><tbody>${h.dedos.map(d=>`<tr><td>${d.pieza}</td><td>${d.nombre}</td><td>${d.lado}</td><td>${d.procedimiento}</td></tr>`).join('')}</tbody></table>`:'<p style="font-size:12px;color:#6b6b67">No se registraron piezas específicas.</p>';
+  document.getElementById('informe-preview').innerHTML=`
+    <div class="inf-header">
+      <div class="inf-logo-wrap"><div class="inf-logo"><img src="${IMG_SRC}" alt="QUIROPODSCZ"></div>
+        <div><div class="inf-brand-name">QUIROPODSCZ</div><div class="inf-brand-sub">Podología profesional a domicilio</div><div class="inf-brand-sub">${ciudad}</div></div></div>
+      <div class="inf-prof-info"><div style="font-weight:600;color:#085041;margin-bottom:2px">${prof}</div><div>${esp}</div><div>Reg. Prof.: ${reg}</div><div>${tel} · ${redes}</div><div style="margin-top:6px;font-size:11px;color:#6b6b67">Fecha de emisión: ${hoy}</div></div>
+    </div>
+    <div style="background:#E1F5EE;border-radius:8px;padding:12px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center">
+      <div><div style="font-weight:600;font-size:15px;color:#085041">${h.paciente_nombre}</div><div style="font-size:12px;color:#0F6E56">CI: ${h.ci||'—'} ${h.nacimiento?' · Nac.: '+fd(h.nacimiento):''}</div></div>
+      <div style="text-align:right"><div style="font-size:11px;color:#0F6E56">Ficha N°</div><div style="font-weight:600;font-size:18px;color:#085041">${h.ficha||'—'}</div><div style="font-size:11px;color:#0F6E56">Fecha consulta: ${fd(h.fecha)}</div></div>
+    </div>
+    <div class="inf-section"><div class="inf-section-title">Servicio</div><div class="inf-row"><span class="inf-lbl">Servicio realizado</span><span class="inf-val">${h.servicio||'—'}</span></div><div class="inf-row"><span class="inf-lbl">Diagnóstico</span><span class="inf-val">${h.diagnostico||'—'}</span></div></div>
+    <div class="inf-section"><div class="inf-section-title">Tabla de piezas — nomenclatura ISO 3950</div>${dedosHtml}</div>
+    <div class="inf-section"><div class="inf-section-title">Informe clínico</div><div class="inf-ai-content">${(h.informe_texto||'Sin informe.').replace(/</g,'&lt;')}</div></div>
+    ${fotosHtml?`<div class="inf-section"><div class="inf-section-title">Registro fotográfico</div><div class="inf-fotos-grid">${fotosHtml}</div></div>`:''}
+    ${h.proxima_cita?`<div class="inf-section"><div class="inf-section-title">Próxima cita</div><div class="inf-row"><span class="inf-lbl">Fecha programada</span><span class="inf-val">${fd(h.proxima_cita)}</span></div></div>`:''}
+    <div class="inf-footer">
+      <div style="text-align:center"><div class="inf-firma-linea"></div><div class="inf-firma-nombre">${prof}</div><div class="inf-firma-titulo">${esp}</div><div class="inf-firma-titulo">Reg. Prof.: ${reg}</div></div>
+      <div class="inf-fecha" style="text-align:right">Informe generado con asistencia de IA<br>Revisado y validado por ${prof}<br>${ciudad} · ${hoy}</div>
+    </div>`;
+}
+
+window._imprimirInforme = function() {
+  const contenido=document.getElementById('informe-preview').innerHTML;
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe QUIROPODSCZ</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'DM Sans',sans-serif;font-size:13px;color:#1a1917;background:#fff}
+  .inf-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #1D9E75}
+  .inf-logo-wrap{display:flex;align-items:center;gap:12px}.inf-logo{width:56px;height:56px;border-radius:8px;overflow:hidden;background:#085041}
+  .inf-logo img{width:100%;height:100%;object-fit:cover}.inf-brand-name{font-family:'DM Serif Display',serif;font-size:20px;color:#085041;font-weight:700}
+  .inf-brand-sub{font-size:11px;color:#0F6E56}.inf-prof-info{text-align:right;font-size:12px;color:#3d3d3a}
+  .inf-section{margin-bottom:18px}.inf-section-title{font-size:12px;font-weight:600;color:#1D9E75;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #E1F5EE;padding-bottom:4px;margin-bottom:8px}
+  .inf-row{display:flex;gap:8px;margin-bottom:4px}.inf-lbl{font-size:12px;color:#6b6b67;min-width:140px}.inf-val{font-size:12px;color:#1a1917;font-weight:500}
+  .dedos-table{width:100%;border-collapse:collapse;margin-top:6px}.dedos-table th{background:#E1F5EE;color:#085041;font-size:11px;padding:6px 8px;text-align:left;font-weight:600}
+  .dedos-table td{padding:6px 8px;border-bottom:1px solid #f0ede8;font-size:12px}.inf-ai-content{font-size:13px;line-height:1.8;white-space:pre-wrap}
+  .inf-footer{margin-top:32px;padding-top:16px;border-top:1px solid #E1F5EE;display:flex;justify-content:space-between;align-items:flex-end}
+  .inf-firma-linea{width:160px;border-top:1px solid #1a1917;margin:0 auto 4px}.inf-firma-nombre{font-size:12px;font-weight:600;color:#085041}
+  .inf-firma-titulo{font-size:11px;color:#6b6b67}.inf-fotos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+  .inf-foto{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;border:1px solid #f0ede8}
+  .informe-doc{max-width:800px;margin:0 auto;padding:40px}@media print{@page{size:A4;margin:20mm}}</style></head>
+  <body><div class="informe-doc">${contenido}</div></body></html>`);
+  w.document.close(); w.onload=()=>{w.focus();w.print();};
+};
+
+// ── RECIBOS ───────────────────────────────────────────────────
+window._autoMontoRec = function() {
+  const sel=document.getElementById('r-servicio');
+  const m=sel?.options[sel.selectedIndex]?.dataset?.m;
+  if(m){document.getElementById('r-subtotal').value=m; window._calcTotalRec();}
+};
+
+window._calcTotalRec = function() {
+  const sub=parseFloat(document.getElementById('r-subtotal')?.value)||0;
+  const tr=parseFloat(document.getElementById('r-transporte')?.value)||0;
+  const dc=parseFloat(document.getElementById('r-descuento')?.value)||0;
+  document.getElementById('r-total').value='Bs. '+Math.max(0,sub+tr-dc).toLocaleString('es-BO');
+};
+
+async function nextNumRec() {
+  const all=await getAllRecibos().catch(()=>[]);
+  if(!all.length) return 'REC-001';
+  const nums=all.map(r=>parseInt((r.num||'REC-000').replace(/\D/g,''))).filter(Boolean);
+  return 'REC-'+String(Math.max(...nums)+1).padStart(3,'0');
+}
+
+window._openNuevoRecibo = async function() {
+  const num=await nextNumRec();
+  document.getElementById('r-num').value=num;
+  document.getElementById('r-fecha').value=new Date().toISOString().slice(0,10);
+  ['r-paciente','r-ficha','r-ci','r-subtotal','r-desc','r-notas'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('r-transporte').value='30';
+  document.getElementById('r-descuento').value='0';
+  document.getElementById('r-servicio').value='';
+  window._calcTotalRec();
+  openM('modal-rec');
+};
+
+window._saveRecibo = async function() {
+  const pac=document.getElementById('r-paciente').value.trim();
+  const sub=parseFloat(document.getElementById('r-subtotal').value)||0;
+  if(!pac||!sub){toast('Completá paciente y monto','warn');return;}
+  const tr=parseFloat(document.getElementById('r-transporte').value)||0;
+  const dc=parseFloat(document.getElementById('r-descuento').value)||0;
+  const total=Math.max(0,sub+tr-dc);
+  const rec={
+    num: document.getElementById('r-num').value,
+    fecha: document.getElementById('r-fecha').value,
+    paciente_nombre: pac, ficha: parseInt(document.getElementById('r-ficha').value)||null,
+    ci: document.getElementById('r-ci').value||null,
+    servicio: document.getElementById('r-servicio').value||'Servicio podológico',
+    descripcion: document.getElementById('r-desc').value||null,
+    subtotal:sub, transporte:tr, descuento:dc, total,
+    pago: document.getElementById('r-pago').value,
+    estado: document.getElementById('r-estado').value,
+    notas: document.getElementById('r-notas').value||null,
+    mes: curM(),
+  };
+  try {
+    await saveRecibo(rec);
+    closeM('modal-rec');
+    toast('Recibo guardado ✓');
+    window._renderRecibos();
+    window._mostrarReciboPDF(rec);
+  } catch(e){toast('Error: '+e.message,'err');}
+};
+
+window._renderRecibos = async function() {
+  const mes=selM('rec-month');
+  const [recs,all]=await Promise.all([getRecibos(mes).catch(()=>[]),getAllRecibos().catch(()=>[])]);
+  const totMes=recs.reduce((a,r)=>a+Number(r.total),0);
+  const pendMes=recs.filter(r=>r.estado==='Pendiente').reduce((a,r)=>a+Number(r.total),0);
+  document.getElementById('rec-count').textContent=`${all.length} recibo${all.length!==1?'s':''} en total`;
+  document.getElementById('rec-total-kpi').textContent=bs(totMes);
+  document.getElementById('rec-n-kpi').textContent=recs.length;
+  document.getElementById('rec-pend-kpi').textContent=bs(pendMes);
+  document.getElementById('rec-pend-n').textContent=`${recs.filter(r=>r.estado==='Pendiente').length} sin cobrar`;
+  document.getElementById('rec-ultimo-kpi').textContent=all.length?all[0].num:'#000';
+  const wrap=document.getElementById('rec-wrap');
+  if(!recs.length){wrap.innerHTML=`<div class="empty">Sin recibos en ${MN[parseInt(mes.split('-')[1])-1]}.</div>`;return;}
+  wrap.innerHTML=`<div class="scroll"><table class="tbl">
+    <thead><tr><th>N° Recibo</th><th>Fecha</th><th>Paciente</th><th>Servicio</th><th>Total</th><th>Pago</th><th>Estado</th><th></th></tr></thead>
+    <tbody>${recs.map(r=>`<tr>
+      <td class="fw6 c-teal">${r.num}</td><td style="white-space:nowrap">${fd(r.fecha)}</td>
+      <td class="fw6">${r.paciente_nombre}</td><td style="font-size:12px;max-width:160px">${r.servicio||'—'}</td>
+      <td class="fw6 c-teal">${bs(r.total)}</td><td>${r.pago}</td>
+      <td><span class="rec-estado badge ${r.estado==='Pagado'?'rec-pagado':'rec-pendiente'}">${r.estado}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-gray btn-sm" style="margin-right:4px" onclick="window._verReciboPDF('${r.id}')">Ver PDF</button>
+        ${r.estado==='Pendiente'?`<button class="btn btn-p btn-sm" style="margin-right:4px" onclick="window._marcarPagado('${r.id}')">✓ Cobrado</button>`:''}
+        <button class="btn btn-danger btn-sm" onclick="window._delRecibo('${r.id}')">✕</button>
+      </td>
+    </tr>`).join('')}</tbody>
+    <tfoot><tr><td colspan="4">Total del mes — ${recs.length} recibos</td><td class="c-teal">${bs(totMes)}</td><td colspan="3" style="font-size:11px;color:var(--g500)">Pendiente: ${bs(pendMes)}</td></tr></tfoot>
+  </table></div>`;
+};
+
+window._verReciboPDF = async function(id) {
+  const all=await getAllRecibos().catch(()=>[]);
+  const r=all.find(x=>x.id===id);
+  if(r) window._mostrarReciboPDF(r);
+};
+
+window._mostrarReciboPDF = function(r) {
+  if(!r) return;
+  const cfg=APP.config;
+  const prof=cfg.nombre||'Pod. Erik Quiroz';
+  const reg=cfg.registro||'En trámite';
+  const esp=cfg.especialidad||'Podología clínica y quirúrgica';
+  const tel=cfg.tel||'+591 62458126';
+  const redes=cfg.redes||'@quiropodscz';
+  const ciudad=cfg.ciudad||'Santa Cruz de la Sierra, Bolivia';
+  const hoy=new Date().toLocaleDateString('es-BO',{year:'numeric',month:'long',day:'numeric'});
+  const items=[{desc:r.servicio+(r.descripcion?' — '+r.descripcion:''),precio:r.subtotal}];
+  if(r.transporte>0) items.push({desc:'Transporte a domicilio',precio:r.transporte});
+  if(r.descuento>0) items.push({desc:'Descuento',precio:-r.descuento});
+  document.getElementById('recibo-preview').innerHTML=`
+    <div class="rec-header">
+      <div class="rec-logo-wrap"><div class="rec-logo"><img src="${IMG_SRC}" alt="Q"></div>
+        <div><div class="rec-brand">QUIROPODSCZ</div><div class="rec-brand-sub">Podología profesional a domicilio</div>
+        <div class="rec-brand-sub">${tel} · ${redes}</div><div class="rec-brand-sub">${ciudad}</div></div></div>
+      <div class="rec-num-block"><div class="rec-num-label">${r.estado==='Pagado'?'Recibo de pago':'Factura proforma'}</div>
+        <div class="rec-num">${r.num}</div><div class="rec-date">Fecha: ${fd(r.fecha)}</div>
+        <div style="margin-top:6px"><span class="badge ${r.estado==='Pagado'?'rec-pagado':'rec-pendiente'}">${r.estado}</span></div></div>
+    </div>
+    <div class="rec-parties">
+      <div><div class="rec-party-label">Prestador</div><div class="rec-party-name">${prof}</div>
+        <div class="rec-party-detail">${esp}<br>Reg. Prof.: ${reg}<br>${ciudad}</div></div>
+      <div><div class="rec-party-label">Paciente</div><div class="rec-party-name">${r.paciente_nombre}</div>
+        <div class="rec-party-detail">${r.ci?'CI: '+r.ci:''}${r.ficha?'<br>Ficha N°: '+r.ficha:''}<br>Pago: ${r.pago}</div></div>
+    </div>
+    <table class="rec-items"><thead><tr><th>Descripción</th><th>Cant.</th><th>Precio</th></tr></thead>
+      <tbody>${items.map(it=>`<tr><td>${it.desc}</td><td style="text-align:center">1</td><td>${it.precio<0?'−':''}Bs. ${Math.abs(it.precio).toLocaleString('es-BO')}</td></tr>`).join('')}</tbody>
+    </table>
+    <div class="rec-totals">
+      <div class="rec-total-row"><span>Subtotal</span><span>Bs. ${Number(r.subtotal).toLocaleString('es-BO')}</span></div>
+      ${r.transporte>0?`<div class="rec-total-row"><span>Transporte</span><span>Bs. ${Number(r.transporte).toLocaleString('es-BO')}</span></div>`:''}
+      ${r.descuento>0?`<div class="rec-total-row"><span>Descuento</span><span>−Bs. ${Number(r.descuento).toLocaleString('es-BO')}</span></div>`:''}
+      <div class="rec-total-row grand"><span>TOTAL</span><span>Bs. ${Number(r.total).toLocaleString('es-BO')}</span></div>
+    </div>
+    ${r.notas?`<div style="font-size:12px;color:#6b6b67;margin-bottom:16px;padding:10px;background:#f7f5f2;border-radius:6px"><strong>Notas:</strong> ${r.notas}</div>`:''}
+    <div class="rec-footer">
+      <div class="rec-nota">Gracias por confiar en QUIROPODSCZ.<br>${tel} · ${redes}<br><em style="font-size:10px">Emitido: ${hoy}</em></div>
+      <div class="rec-firma-txt"><div class="rec-firma-linea"></div><div class="rec-firma-nombre">${prof}</div><div>${esp}</div><div>Reg. Prof.: ${reg}</div></div>
+    </div>`;
+  openM('modal-rec-preview');
+};
+
+window._imprimirRecibo = function() {
+  const contenido=document.getElementById('recibo-preview').innerHTML;
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Recibo QUIROPODSCZ</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'DM Sans',sans-serif;font-size:13px;color:#1a1917;background:#fff}
+  .recibo-doc{max-width:680px;margin:0 auto;padding:32px}
+  .rec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #1D9E75}
+  .rec-logo-wrap{display:flex;align-items:center;gap:10px}.rec-logo{width:48px;height:48px;border-radius:7px;overflow:hidden;background:#085041}
+  .rec-logo img{width:100%;height:100%;object-fit:cover}.rec-brand{font-family:'DM Serif Display',serif;font-size:18px;color:#085041;font-weight:700}
+  .rec-brand-sub{font-size:10px;color:#0F6E56}.rec-num-block{text-align:right}
+  .rec-num{font-family:'DM Serif Display',serif;font-size:24px;color:#085041}.rec-date{font-size:11px;color:#6b6b67;margin-top:2px}
+  .rec-parties{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;padding:14px;background:#f7f5f2;border-radius:8px}
+  .rec-party-label{font-size:10px;font-weight:600;color:#6b6b67;text-transform:uppercase;margin-bottom:4px}
+  .rec-party-name{font-size:14px;font-weight:600;margin-bottom:2px}.rec-party-detail{font-size:11px;color:#6b6b67;line-height:1.5}
+  .rec-items{width:100%;border-collapse:collapse;margin-bottom:16px}
+  .rec-items th{text-align:left;padding:8px;font-size:10px;font-weight:600;color:#fff;background:#085041;text-transform:uppercase}
+  .rec-items th:last-child,.rec-items td:last-child{text-align:right}.rec-items td{padding:10px 8px;border-bottom:1px solid #f0ede8;font-size:13px}
+  .rec-items td:last-child{font-weight:600}.rec-totals{margin-left:auto;width:260px;margin-bottom:20px}
+  .rec-total-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #f0ede8}
+  .rec-total-row.grand{border-top:2px solid #1D9E75;border-bottom:none;padding-top:10px;margin-top:4px;font-weight:700;font-size:15px;color:#085041}
+  .rec-footer{display:flex;justify-content:space-between;align-items:flex-end;margin-top:24px;padding-top:14px;border-top:1px solid #E1F5EE}
+  .rec-firma-linea{width:140px;border-top:1px solid #1a1917;margin:0 auto 4px}.rec-firma-txt{text-align:center;font-size:11px;color:#6b6b67}
+  .rec-firma-nombre{font-weight:600;color:#085041;font-size:12px}.rec-nota{font-size:11px;color:#6b6b67;max-width:240px;line-height:1.5}
+  .badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600}
+  .rec-pagado{background:#EAF3DE;color:#3B6D11}.rec-pendiente{background:#FAEEDA;color:#854F0B}
+  @media print{body{margin:0}@page{size:A4;margin:20mm}}</style></head>
+  <body><div class="recibo-doc">${contenido}</div></body></html>`);
+  w.document.close(); w.onload=()=>{w.focus();w.print();};
+};
+
+window._marcarPagado = async function(id) {
+  try { await updateRecibo(id,{estado:'Pagado'}); toast('Marcado como pagado ✓'); window._renderRecibos(); }
+  catch(e){toast('Error','err');}
+};
+
+window._delRecibo = async function(id) {
+  if(!confirm('¿Eliminar este recibo?')) return;
+  try { await deleteRecibo(id); toast('Recibo eliminado'); window._renderRecibos(); }
+  catch(e){toast('Error','err');}
+};
+
+// ── CONFIGURACIÓN ─────────────────────────────────────────────
+function loadConfigUI() {
+  const cfg=APP.config;
+  const map={nombre:'cfg-nombre',especialidad:'cfg-esp',registro:'cfg-reg',tel:'cfg-tel',redes:'cfg-redes',ciudad:'cfg-ciudad',workerUrl:'cfg-worker'};
+  Object.entries(map).forEach(([k,id])=>{const el=document.getElementById(id); if(el&&cfg[k])el.value=cfg[k];});
+  // Defaults
+  if(!document.getElementById('cfg-worker').value) document.getElementById('cfg-worker').value=WORKER_URL;
+}
+
+window._openConfig = function() { loadConfigUI(); openM('modal-config'); };
+
+window._guardarConfig = async function() {
+  const pairs={
+    nombre: document.getElementById('cfg-nombre').value,
+    especialidad: document.getElementById('cfg-esp').value,
+    registro: document.getElementById('cfg-reg').value,
+    tel: document.getElementById('cfg-tel').value,
+    redes: document.getElementById('cfg-redes').value,
+    ciudad: document.getElementById('cfg-ciudad').value,
+    workerUrl: document.getElementById('cfg-worker').value,
+  };
+  try {
+    await setConfigBatch(pairs);
+    Object.assign(APP.config, pairs);
+    closeM('modal-config');
+    toast('Configuración guardada ✓');
+  } catch(e){toast('Error: '+e.message,'err');}
+};
+
+// ── OVERLAYS click-outside ────────────────────────────────────
+document.querySelectorAll('.overlay').forEach(o=>{
+  o.addEventListener('click', e=>{ if(e.target===o) o.classList.remove('open'); });
+});
+
+// ── INICIAR ────────────────────────────────────────────────────
+initAuth();
+</script>
+</body>
+</html>
