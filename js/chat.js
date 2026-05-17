@@ -86,14 +86,18 @@ function parseRespuesta(texto) {
 async function llamarIA(context) {
   const workerUrl = APP.config?.workerUrl || WORKER_URL;
   const systemPrompt = buildSystemPrompt(context);
+
+  // Construir prompt completo compatible con el Worker existente
+  const historial = mensajes.map(m =>
+    `${m.role === 'user' ? 'Usuario' : 'Asistente'}: ${m.content}`
+  ).join('\n\n');
+
+  const promptCompleto = `${systemPrompt}\n\n---\nCONVERSACIÓN:\n${historial}\n\nAsistente:`;
+
   const resp = await fetch(workerUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      system: systemPrompt,
-      messages: mensajes,
-      max_tokens: 600,
-    })
+    body: JSON.stringify({ prompt: promptCompleto })
   });
   if (!resp.ok) throw new Error(`Worker error ${resp.status}`);
   const data = await resp.json();
