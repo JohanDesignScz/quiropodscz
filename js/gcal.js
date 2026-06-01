@@ -78,11 +78,22 @@ export function isGCalAuthorized() { return isAuthorized; }
 export async function crearEventoGCal(cita) {
   if (!isAuthorized) throw new Error('No autorizado en Google Calendar');
 
-  // Construir fechas con hora
-  const fechaInicio = `${cita.fecha}T${cita.hora_inicio || '08:00'}:00`;
-  const fechaFin    = cita.hora_fin
-    ? `${cita.fecha}T${cita.hora_fin}:00`
-    : `${cita.fecha}T${sumarHora(cita.hora_inicio || '08:00', 60)}:00`;
+  // Normalizar hora — acepta HH:MM o HH:MM:SS
+  const normHora = (h) => {
+    if (!h) return '08:00:00';
+    const partes = h.split(':');
+    return `${partes[0].padStart(2,'0')}:${(partes[1]||'00').padStart(2,'0')}:00`;
+  };
+
+  const horaIni = normHora(cita.hora_inicio);
+  const horaFin = cita.hora_fin
+    ? normHora(cita.hora_fin)
+    : normHora(sumarHora(cita.hora_inicio || '08:00', 60));
+
+  const fechaInicio = `${cita.fecha}T${horaIni}`;
+  const fechaFin    = `${cita.fecha}T${horaFin}`;
+
+  console.log('GCal evento — inicio:', fechaInicio, '— fin:', fechaFin);
 
   const evento = {
     summary: `🦶 ${cita.paciente_nombre} — ${cita.servicio || 'Consulta podológica'}`,
