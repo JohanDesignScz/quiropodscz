@@ -752,3 +752,49 @@ textarea { resize: vertical; min-height: 64px; }
   .chat-wrap { height: calc(100vh - 150px); }
   .msg-body { max-width: 88%; }
 }
+
+/* ── GASTOS RÁPIDOS ────────────────────────────────────────── */
+#gastos-rapidos-panel {
+  display: none;
+  margin-top: 16px;
+  background: #fff;
+  border: 1px solid var(--g100);
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+.gr-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--g500);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: 10px;
+}
+.gr-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+@media(max-width:480px) { .gr-grid { grid-template-columns: repeat(2, 1fr); } }
+.gr-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  background: var(--g50);
+  border: 1.5px solid var(--g100);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: 'DM Sans', sans-serif;
+}
+.gr-btn:hover {
+  border-color: var(--amber);
+  background: var(--amberBg);
+  transform: translateY(-1px);
+}
+.gr-icon  { font-size: 22px; }
+.gr-label { font-size: 11px; font-weight: 600; color: var(--g700); text-align: center; }
+.gr-monto { font-size: 11px; color: var(--red); font-weight: 700; }
