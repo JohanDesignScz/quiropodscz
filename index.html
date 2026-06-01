@@ -262,9 +262,10 @@
           </div>
         </div>
         <div class="chat-messages" id="chat-messages"></div>
+        <div id="gastos-rapidos-panel"></div>
         <div class="chat-input-area">
           <div class="chat-input-wrap">
-            <textarea id="chat-input" rows="1" placeholder="Escribí algo... Ej: Agendá a María Pérez el lunes a las 10am para pie diabético en zona 1"></textarea>
+            <textarea id="chat-input" rows="1" placeholder="Ej: Agendá a María el lunes 10am · Registrá gasolina Bs.300 · ¿Qué citas tengo hoy?"></textarea>
             <button class="chat-send-btn" onclick="window._enviarMensaje()" id="chat-send-btn">
               <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
             </button>
@@ -672,7 +673,7 @@ import {
 } from './js/agenda.js';
 import {
   renderChat, enviarMensaje, limpiarChat,
-  usarSugerencia, mostrarBienvenida
+  usarSugerencia, mostrarBienvenida, renderGastosRapidos
 } from './js/chat.js';
 
 // ── Logos ──────────────────────────────────────────────────────
