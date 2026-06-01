@@ -798,3 +798,26 @@ textarea { resize: vertical; min-height: 64px; }
 .gr-icon  { font-size: 22px; }
 .gr-label { font-size: 11px; font-weight: 600; color: var(--g700); text-align: center; }
 .gr-monto { font-size: 11px; color: var(--red); font-weight: 700; }
+
+/* ── GOOGLE CALENDAR BUTTON ────────────────────────────────── */
+.btn-gcal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: #fff;
+  border: 1.5px solid var(--g200);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  color: var(--g700);
+  cursor: pointer;
+  transition: all .15s;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+}
+.btn-gcal:hover {
+  border-color: #4285F4;
+  box-shadow: 0 2px 8px rgba(66,133,244,.2);
+  color: #4285F4;
+}
