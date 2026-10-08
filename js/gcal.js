@@ -1,101 +1,158 @@
 // ================================================================
-// QUIROPODSCZ v3 — Google Calendar Integration
+// QUIROPODSCZ v3 — Google Calendar Integration (v2)
+// Cambios vs v1:
+//  - El token se guarda en localStorage (sobrevive recargas)
+//  - Renovación automática cuando vence (1 h) antes de cada sync
+//  - Reintento automático si Google responde 401
+//  - Crear / actualizar / eliminar evento (sin duplicados)
+//  - syncCitaGCal() central, usado por Agenda y por el Asistente IA
 // ================================================================
+import { toast } from './app.js';
+import { setCitaGcalId } from './db.js';
 
-const CLIENT_ID    = '412770764823-nu0tebv7fn29q059i57jrcab090mupo5.apps.googleusercontent.com';
-const SCOPES       = 'https://www.googleapis.com/auth/calendar.events';
-const DISCO_DOC    = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
-const CALENDAR_ID  = 'primary'; // Calendario principal del usuario
+const CLIENT_ID   = '412770764823-nu0tebv7fn29q059i57jrcab090mupo5.apps.googleusercontent.com';
+const SCOPES      = 'https://www.googleapis.com/auth/calendar.events';
+const DISCO_DOC   = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
+const CALENDAR_ID = 'primary';
+const LS_TOKEN    = 'qp_gcal_token';
+const LS_GRANTED  = 'qp_gcal_granted';
 
-let gapiLoaded  = false;
-let gisLoaded   = false;
 let tokenClient = null;
-let isAuthorized = false;
+let accessToken = null;
+let expiresAt   = 0;
+let waiting     = [];
+
+// ── Token ─────────────────────────────────────────────────────
+function tokenValid() { return !!accessToken && Date.now() < expiresAt; }
+
+function applyToken(token, expMs) {
+  accessToken = token;
+  expiresAt   = expMs;
+  window.gapi.client.setToken({ access_token: token });
+}
+
+function persist() {
+  try {
+    localStorage.setItem(LS_TOKEN, JSON.stringify({ t: accessToken, e: expiresAt }));
+    localStorage.setItem(LS_GRANTED, '1');
+  } catch (e) {}
+}
+
+function restore() {
+  try {
+    const s = JSON.parse(localStorage.getItem(LS_TOKEN) || 'null');
+    if (s && Date.now() < s.e) { applyToken(s.t, s.e); return true; }
+  } catch (e) {}
+  return false;
+}
+
+function clearToken() {
+  accessToken = null; expiresAt = 0;
+  try { localStorage.removeItem(LS_TOKEN); } catch (e) {}
+}
+
+function flush(ok) {
+  const w = waiting; waiting = [];
+  w.forEach(r => r(ok));
+}
+
+// "Conectado" = el usuario ya dio permiso alguna vez (el token se renueva solo)
+export function isGCalAuthorized() {
+  try { return !!localStorage.getItem(LS_GRANTED); } catch (e) { return false; }
+}
 
 // ── Cargar librerías Google ───────────────────────────────────
-export function loadGoogleLibs() {
-  return new Promise((resolve) => {
-    // GAPI
-    const s1 = document.createElement('script');
-    s1.src = 'https://apis.google.com/js/api.js';
-    s1.onload = () => {
-      window.gapi.load('client', async () => {
-        await window.gapi.client.init({
-          discoveryDocs: [DISCO_DOC],
-        });
-        gapiLoaded = true;
-        if (gisLoaded) resolve();
-      });
-    };
-    document.head.appendChild(s1);
-
-    // GIS
-    const s2 = document.createElement('script');
-    s2.src = 'https://accounts.google.com/gsi/client';
-    s2.onload = () => {
-      tokenClient = window.google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
-        callback: (resp) => {
-          if (resp.error) { console.error('GCal auth error', resp); return; }
-          isAuthorized = true;
-          updateGCalUI(true);
-          window._gcalAfterAuth?.();
-        },
-      });
-      gisLoaded = true;
-      if (gapiLoaded) resolve();
-    };
-    document.head.appendChild(s2);
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
   });
 }
 
-// ── Autorizar ─────────────────────────────────────────────────
+export async function loadGoogleLibs() {
+  await Promise.all([
+    loadScript('https://apis.google.com/js/api.js'),
+    loadScript('https://accounts.google.com/gsi/client'),
+  ]);
+  await new Promise(res => window.gapi.load('client', res));
+  await window.gapi.client.init({ discoveryDocs: [DISCO_DOC] });
+
+  tokenClient = window.google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (resp) => {
+      if (resp.error) { console.error('GCal auth error', resp); flush(false); return; }
+      applyToken(resp.access_token, Date.now() + (Number(resp.expires_in) || 3600) * 1000 - 60000);
+      persist();
+      updateGCalUI(true);
+      flush(true);
+    },
+    error_callback: (err) => { console.warn('GCal popup error', err); flush(false); },
+  });
+
+  restore();
+  updateGCalUI(isGCalAuthorized());
+}
+
+// ── Autorizar (botón "Conectar") ──────────────────────────────
 export function authorizeGCal() {
-  if (!tokenClient) { console.warn('GIS no cargado'); return; }
-  if (window.gapi.client.getToken() === null) {
-    tokenClient.requestAccessToken({ prompt: 'consent' });
-  } else {
+  if (!tokenClient) { toast('Google aún no cargó, intentá en unos segundos', 'warn'); return; }
+  tokenClient.requestAccessToken({ prompt: isGCalAuthorized() ? '' : 'consent' });
+}
+
+// ── Garantiza un token vigente (renueva si venció) ────────────
+export function ensureGCalToken() {
+  if (tokenValid()) return Promise.resolve(true);
+  if (!tokenClient || !isGCalAuthorized()) return Promise.resolve(false);
+  return new Promise(res => {
+    waiting.push(res);
     tokenClient.requestAccessToken({ prompt: '' });
-  }
+  });
 }
 
 // ── Desconectar ───────────────────────────────────────────────
 export function revokeGCal() {
-  const token = window.gapi.client.getToken();
-  if (!token) return;
-  window.google.accounts.oauth2.revoke(token.access_token, () => {
-    window.gapi.client.setToken('');
-    isAuthorized = false;
-    updateGCalUI(false);
-  });
+  if (accessToken) window.google.accounts.oauth2.revoke(accessToken, () => {});
+  clearToken();
+  try { localStorage.removeItem(LS_GRANTED); } catch (e) {}
+  window.gapi?.client?.setToken('');
+  updateGCalUI(false);
 }
 
-// ── Verificar si está autorizado ──────────────────────────────
-export function isGCalAuthorized() { return isAuthorized; }
+// ── Wrapper: token vigente + 1 reintento si 401 ───────────────
+async function cal(fn) {
+  if (!(await ensureGCalToken())) throw new Error('Google Calendar no autorizado');
+  try {
+    return await fn();
+  } catch (e) {
+    if (e?.status === 401) {
+      clearToken();
+      if (await ensureGCalToken()) return await fn();
+    }
+    throw e;
+  }
+}
 
-// ── Crear evento en Google Calendar ──────────────────────────
-export async function crearEventoGCal(cita) {
-  if (!isAuthorized) throw new Error('No autorizado en Google Calendar');
+// ── Helpers de hora ───────────────────────────────────────────
+function normHora(h) {
+  if (!h) return '08:00:00';
+  const p = String(h).split(':');
+  return `${p[0].padStart(2, '0')}:${(p[1] || '00').padStart(2, '0')}:00`;
+}
 
-  // Normalizar hora — acepta HH:MM o HH:MM:SS
-  const normHora = (h) => {
-    if (!h) return '08:00:00';
-    const partes = h.split(':');
-    return `${partes[0].padStart(2,'0')}:${(partes[1]||'00').padStart(2,'0')}:00`;
-  };
+function sumarHora(hora, minutos) {
+  const [h, m] = String(hora).split(':').map(Number);
+  const t = h * 60 + m + minutos;
+  return `${String(Math.floor(t / 60) % 24).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+}
 
-  const horaIni = normHora(cita.hora_inicio);
-  const horaFin = cita.hora_fin
+function buildEvento(cita) {
+  const ini = normHora(cita.hora_inicio);
+  const fin = cita.hora_fin
     ? normHora(cita.hora_fin)
     : normHora(sumarHora(cita.hora_inicio || '08:00', 60));
-
-  const fechaInicio = `${cita.fecha}T${horaIni}`;
-  const fechaFin    = `${cita.fecha}T${horaFin}`;
-
-  console.log('GCal evento — inicio:', fechaInicio, '— fin:', fechaFin);
-
-  const evento = {
+  return {
     summary: `🦶 ${cita.paciente_nombre} — ${cita.servicio || 'Consulta podológica'}`,
     description: [
       `Servicio: ${cita.servicio || '—'}`,
@@ -107,76 +164,80 @@ export async function crearEventoGCal(cita) {
       '📱 QUIROPODSCZ — Podología a domicilio',
       '+591 62458126 · @quiropodscz',
     ].filter(Boolean).join('\n'),
-    start: { dateTime: fechaInicio, timeZone: 'America/La_Paz' },
-    end:   { dateTime: fechaFin,    timeZone: 'America/La_Paz' },
-    colorId: '2', // Verde (compatible con el branding de QUIROPOD)
+    start: { dateTime: `${cita.fecha}T${ini}`, timeZone: 'America/La_Paz' },
+    end:   { dateTime: `${cita.fecha}T${fin}`, timeZone: 'America/La_Paz' },
+    colorId: '2',
     reminders: {
       useDefault: false,
-      overrides: [
-        { method: 'popup',  minutes: 60 },
-        { method: 'popup',  minutes: 15 },
-      ],
+      overrides: [{ method: 'popup', minutes: 60 }, { method: 'popup', minutes: 15 }],
     },
   };
-
-  const resp = await window.gapi.client.calendar.events.insert({
-    calendarId: CALENDAR_ID,
-    resource: evento,
-  });
-
-  return resp.result; // retorna el evento creado con su ID
 }
 
-// ── Actualizar evento en Google Calendar ──────────────────────
-export async function actualizarEventoGCal(eventId, cita) {
-  if (!isAuthorized) throw new Error('No autorizado');
-  const fechaInicio = `${cita.fecha}T${cita.hora_inicio || '08:00'}:00`;
-  const fechaFin    = cita.hora_fin
-    ? `${cita.fecha}T${cita.hora_fin}:00`
-    : `${cita.fecha}T${sumarHora(cita.hora_inicio || '08:00', 60)}:00`;
-
-  const resp = await window.gapi.client.calendar.events.patch({
-    calendarId: CALENDAR_ID,
-    eventId,
-    resource: {
-      summary: `🦶 ${cita.paciente_nombre} — ${cita.servicio || 'Consulta podológica'}`,
-      start: { dateTime: fechaInicio, timeZone: 'America/La_Paz' },
-      end:   { dateTime: fechaFin,    timeZone: 'America/La_Paz' },
-    },
-  });
+// ── CRUD de eventos ───────────────────────────────────────────
+export async function crearEventoGCal(cita) {
+  const resp = await cal(() => window.gapi.client.calendar.events.insert({
+    calendarId: CALENDAR_ID, resource: buildEvento(cita),
+  }));
   return resp.result;
 }
 
-// ── Eliminar evento de Google Calendar ────────────────────────
-export async function eliminarEventoGCal(eventId) {
-  if (!isAuthorized || !eventId) return;
-  await window.gapi.client.calendar.events.delete({
-    calendarId: CALENDAR_ID,
-    eventId,
-  });
+export async function actualizarEventoGCal(eventId, cita) {
+  const resp = await cal(() => window.gapi.client.calendar.events.patch({
+    calendarId: CALENDAR_ID, eventId, resource: buildEvento(cita),
+  }));
+  return resp.result;
 }
 
-// ── Obtener eventos del mes ───────────────────────────────────
+export async function eliminarEventoGCal(eventId) {
+  if (!eventId || !isGCalAuthorized()) return;
+  try {
+    await cal(() => window.gapi.client.calendar.events.delete({ calendarId: CALENDAR_ID, eventId }));
+  } catch (e) {
+    if (e?.status !== 404 && e?.status !== 410) throw e; // ya no existe: ok
+  }
+}
+
 export async function getEventosGCal(year, month) {
-  if (!isAuthorized) return [];
-  const from = new Date(year, month-1, 1).toISOString();
-  const to   = new Date(year, month,   1).toISOString();
-  const resp = await window.gapi.client.calendar.events.list({
+  if (!isGCalAuthorized()) return [];
+  const resp = await cal(() => window.gapi.client.calendar.events.list({
     calendarId: CALENDAR_ID,
-    timeMin: from,
-    timeMax: to,
-    singleEvents: true,
-    orderBy: 'startTime',
-    maxResults: 100,
-  });
+    timeMin: new Date(year, month - 1, 1).toISOString(),
+    timeMax: new Date(year, month, 1).toISOString(),
+    singleEvents: true, orderBy: 'startTime', maxResults: 100,
+  }));
   return resp.result.items || [];
 }
 
-// ── UI del botón Google Calendar ─────────────────────────────
+// ── Sync central: usar después de guardar una cita en Supabase ─
+// `cita` debe ser la fila guardada (con id y, si existe, gcal_event_id)
+export async function syncCitaGCal(cita) {
+  if (!cita?.id || !isGCalAuthorized()) return;
+  try {
+    let evId = cita.gcal_event_id;
+    if (evId) {
+      try {
+        await actualizarEventoGCal(evId, cita);
+      } catch (e) {
+        if (e?.status === 404 || e?.status === 410) evId = null; // lo borraron en Google: recrear
+        else throw e;
+      }
+    }
+    if (!evId) {
+      const ev = await crearEventoGCal(cita);
+      await setCitaGcalId(cita.id, ev.id);
+    }
+    toast('📅 Cita sincronizada con Google Calendar ✓');
+  } catch (e) {
+    console.warn('GCal sync error:', e);
+    const msg = e?.result?.error?.message || e?.message || 'error desconocido';
+    toast('Cita guardada, pero Google Calendar falló: ' + msg, 'warn');
+  }
+}
+
+// ── UI del botón ──────────────────────────────────────────────
 export function renderGCalButton(containerId) {
-  const el = document.getElementById(containerId);
-  if (!el) return;
-  updateGCalUI(isAuthorized, containerId);
+  updateGCalUI(isGCalAuthorized(), containerId);
 }
 
 export function updateGCalUI(authorized, containerId = 'gcal-btn-wrap') {
@@ -195,13 +256,6 @@ export function updateGCalUI(authorized, containerId = 'gcal-btn-wrap') {
         Conectar Google Calendar
       </button>`;
   }
-}
-
-// ── Helpers ───────────────────────────────────────────────────
-function sumarHora(hora, minutos) {
-  const [h, m] = hora.split(':').map(Number);
-  const total  = h * 60 + m + minutos;
-  return `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
 }
 
 // ── Exposición global ─────────────────────────────────────────
