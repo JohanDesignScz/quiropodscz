@@ -3,6 +3,7 @@
 // ================================================================
 import { openM, closeM, toast, bs, fd, APP, SERVICIOS } from './app.js';
 import { getCitasMes, getCitas, saveCita, deleteCita } from './db.js';
+import { syncCitaGCal, eliminarEventoGCal } from './gcal.js';
 
 const MN = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
   'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
