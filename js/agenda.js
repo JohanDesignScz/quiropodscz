@@ -176,20 +176,21 @@ export async function guardaCita() {
     notas:       document.getElementById('cita-notas').value || null,
   };
   if (editandoCitaId) cita.id = editandoCitaId;
-  try {
-    await saveCita(cita);
+    try {
+    const saved = await saveCita(cita);
     closeM('modal-cita');
     toast(editandoCitaId ? 'Cita actualizada' : 'Cita guardada');
     await loadCitas();
     renderCalendar();
     renderDayPanel(fecha);
+    syncCitaGCal(saved);
   } catch(e) { toast('Error al guardar: ' + e.message, 'err'); }
-}
 
 export async function borrarCita(id) {
   if (!confirm('¿Eliminar esta cita?')) return;
   try {
     await deleteCita(id);
+    eliminarEventoGCal(c?.gcal_event_id).catch(console.warn);
     toast('Cita eliminada');
     await loadCitas();
     renderCalendar();
