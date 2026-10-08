@@ -1,6 +1,7 @@
 // ================================================================
 // QUIROPODSCZ v3 — Módulo Asistente IA (Chat) + Gastos inteligentes
 // ================================================================
+import { syncCitaGCal } from './gcal.js';   // arriba
 import { WORKER_URL } from './supabase.js';
 import { APP, toast, MN } from './app.js';
 import { saveCita, getCitas, getPacientesNombres, saveEgreso, curMes } from './db.js';
@@ -224,11 +225,12 @@ export async function enviarMensaje() {
 window._confirmarCita = async function() {
   if (!pendingCita) return;
   try {
-    await saveCita(pendingCita);
+    const saved = await saveCita(pendingCita);
     const pac = pendingCita.paciente_nombre;
     pendingCita = null;
     mensajes.push({ role:'assistant', content:`✅ ¡Cita de **${pac}** guardada correctamente! Podés verla en la **Agenda**. ¿Necesitás algo más?` });
     toast('Cita guardada desde el Asistente IA ✓');
+    syncCitaGCal(saved);
   } catch(e) { toast('Error al guardar la cita: '+e.message,'err'); }
   renderChat();
 };
