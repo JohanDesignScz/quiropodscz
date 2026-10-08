@@ -186,15 +186,17 @@ export async function getCitasMes(year, month) {
 }
 
 export async function saveCita(c) {
-  if (c.id) {
-    const { error } = await supabase.from('citas').update(c).eq('id', c.id);
-    if (error) throw error;
-  } else {
-    const { error } = await supabase.from('citas').insert(c);
-    if (error) throw error;
-  }
+  const q = c.id
+    ? supabase.from('citas').update(c).eq('id', c.id)
+    : supabase.from('citas').insert(c);
+  const { data, error } = await q.select().single();
+  if (error) throw error;
+  return data;
 }
-
+export async function setCitaGcalId(id, eventId) {
+  const { error } = await supabase.from('citas').update({ gcal_event_id: eventId }).eq('id', id);
+  if (error) throw error;
+}
 export async function deleteCita(id) {
   const { error } = await supabase.from('citas').delete().eq('id', id);
   if (error) throw error;
