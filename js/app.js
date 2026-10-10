@@ -160,3 +160,6 @@ export function subscribeTable(table, callback) {
     .on('postgres_changes', { event: '*', schema: 'public', table }, callback)
     .subscribe();
 }
+export function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
