@@ -227,6 +227,24 @@ export async function setConfigBatch(pairs) {
 
 // ── PACIENTES (vista desde historias + consultas) ─────────────────
 export async function getPacientesNombres() {
+  const { data } = await supabase.from('pacientes').select('nombre, telefono, ci, direccion').order('nombre');
+  return (data || []).map(p => ({ paciente_nombre: p.nombre, telefono: p.telefono, ci: p.ci, direccion: p.direccion }));
+}
+
+export async function getPacientes(q) {
+  let query = supabase.from('pacientes').select('*').order('nombre');
+  if (q) query = query.ilike('nombre', `%${q}%`);
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
+}
+
+export async function savePaciente(p) {
+  const { error } = p.id
+    ? await supabase.from('pacientes').update(p).eq('id', p.id)
+    : await supabase.from('pacientes').insert(p);
+  if (error) throw error;
+}
   const [h, c] = await Promise.all([
     supabase.from('historias').select('paciente_nombre, ci, telefono, direccion, ficha').order('paciente_nombre'),
     supabase.from('consultas').select('paciente_nombre').order('paciente_nombre')
