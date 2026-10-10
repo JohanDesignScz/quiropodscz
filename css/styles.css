@@ -821,3 +821,12 @@ textarea { resize: vertical; min-height: 64px; }
   box-shadow: 0 2px 8px rgba(66,133,244,.2);
   color: #4285F4;
 }
+/* ── AGENDA POR HORAS ─────────────────────────────────────────── */
+.slot-row { display:flex; gap:10px; border-top:1px solid var(--g100); padding:6px 0; min-height:44px; }
+.slot-hora { width:48px; flex-shrink:0; font-size:11px; font-weight:600; color:var(--g500); padding-top:6px; }
+.slot-content { flex:1; display:flex; flex-direction:column; gap:6px; }
+.slot-card { display:flex; justify-content:space-between; gap:8px; background:var(--t50); border-left:3px solid var(--t600); border-radius:6px; padding:8px 10px; }
+.slot-body { flex:1; }
+.slot-free { background:none; border:1px dashed var(--g200); color:var(--g300); border-radius:6px; padding:6px 10px; font-size:12px; font-family:inherit; cursor:pointer; text-align:left; }
+.slot-free:hover { border-color:var(--t400); color:var(--t600); background:var(--t50); }
+.slot-busy { font-size:11px; color:var(--g500); font-style:italic; padding:8px 4px; }
