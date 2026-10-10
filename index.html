@@ -51,6 +51,7 @@
     <div class="nav-tabs">
       <button class="nav-tab active"  onclick="go('dashboard')">Dashboard</button>
       <button class="nav-tab"         onclick="go('agenda')">📅 Agenda</button>
+      <button class="nav-tab"         onclick="go('pacientes')">👤 Pacientes</button>
       <button class="nav-tab"         onclick="go('registro')">Registro</button>
       <button class="nav-tab"         onclick="go('cuotas')">Cuotas</button>
       <button class="nav-tab"         onclick="go('egresos')">Egresos</button>
@@ -119,6 +120,16 @@
     </div>
 
     <!-- ── REGISTRO ───────────────────────────────────────── -->
+        <div class="page" id="page-pacientes">
+      <div class="sec-hdr">
+        <div><div class="sec-title">Pacientes</div><div class="c-muted" id="pac-count" style="font-size:12px;margin-top:2px"></div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input type="text" id="pac-buscar" placeholder="Buscar paciente..." style="width:200px" oninput="window._renderPacientes()">
+          <button class="btn btn-p" onclick="window._nuevoPaciente()">+ Nuevo paciente</button>
+        </div>
+      </div>
+      <div class="card"><div id="pac-wrap"><div class="empty">Cargando...</div></div></div>
+    </div>
     <div class="page" id="page-registro">
       <div class="sec-hdr">
         <div><div class="sec-title">Registro de consultas</div></div>
@@ -286,6 +297,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Panel</button>
       <button class="bot-tab" onclick="go('agenda')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Agenda</button>
+               <button class="bot-tab" onclick="go('pacientes')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0112 0v1"/></svg>Pacientes</button>
       <button class="bot-tab" onclick="go('registro')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>Registro</button>
       <button class="bot-tab" onclick="go('historias')">
@@ -302,7 +314,28 @@
 <!-- ════════════════════════════════════════════════════
      MODALES
 ════════════════════════════════════════════════════ -->
-
+<!-- Modal Paciente -->
+<div class="overlay" id="modal-pac">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-hdr"><div class="modal-title" id="modal-pac-title">Nuevo paciente</div><button class="modal-x" onclick="closeM('modal-pac')">×</button></div>
+    <div class="modal-body">
+      <div class="fg"><label>Nombre completo</label><input type="text" id="pac-nombre"></div>
+      <div class="form-row">
+        <div class="fg"><label>Teléfono (WhatsApp)</label><input type="text" id="pac-tel" placeholder="+591 70000000"></div>
+        <div class="fg"><label>CI / Documento</label><input type="text" id="pac-ci"></div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>Zona</label><select id="pac-zona"><option>Zona 1</option><option>Zona 2</option></select></div>
+        <div class="fg"><label>Dirección</label><input type="text" id="pac-dir" placeholder="Barrio, referencia..."></div>
+      </div>
+      <div class="fg"><label>Notas (no clínicas)</label><textarea id="pac-notas" rows="2"></textarea></div>
+      <div class="form-actions">
+        <button class="btn btn-gray" onclick="closeM('modal-pac')">Cancelar</button>
+        <button class="btn btn-p" onclick="window._guardarPaciente()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- Modal Cita -->
 <div class="overlay" id="modal-cita">
   <div class="modal" style="max-width:500px">
