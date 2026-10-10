@@ -185,6 +185,7 @@ export async function getCitasMes(year, month) {
   return data || [];
 }
 
+// Devuelve la fila guardada (con id y gcal_event_id)
 export async function saveCita(c) {
   const q = c.id
     ? supabase.from('citas').update(c).eq('id', c.id)
@@ -193,10 +194,12 @@ export async function saveCita(c) {
   if (error) throw error;
   return data;
 }
+
 export async function setCitaGcalId(id, eventId) {
   const { error } = await supabase.from('citas').update({ gcal_event_id: eventId }).eq('id', id);
   if (error) throw error;
 }
+
 export async function deleteCita(id) {
   const { error } = await supabase.from('citas').delete().eq('id', id);
   if (error) throw error;
@@ -226,6 +229,7 @@ export async function setConfigBatch(pairs) {
 }
 
 // ── PACIENTES ────────────────────────────────────────────────────
+// Misma forma que antes para no romper los datalists y el chat
 export async function getPacientesNombres() {
   const { data } = await supabase
     .from('pacientes').select('nombre, telefono, ci, direccion').order('nombre');
