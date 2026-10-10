@@ -703,7 +703,7 @@ import { supabase, WORKER_URL } from './js/supabase.js';
 import { LOGO_B64 } from './js/logo.js';
 import {
   APP, MN, SERVICIOS, bs, fd, curM, monthOpts, fillMonthSelects, selM,
-  toast, openM, closeM, showSpinner, loadConfig, fillPacienteDatalist
+  toast, openM, closeM, showSpinner, loadConfig, fillPacienteDatalist, esc
 } from './js/app.js';
 import {
   getConsultas, getAllConsultas, saveConsulta, deleteConsulta,
@@ -716,6 +716,7 @@ import {
   signIn, signOut, getSession, getPerfil, curMes
 } from './js/db.js';
 import { renderDashboard } from './js/dashboard.js';
+import { renderPacientes } from './js/pacientes.js';
 import {
   renderAgenda, calPrev, calNext,
   nuevaCita, editCita, guardaCita, borrarCita
@@ -738,10 +739,12 @@ const IMG_SRC = 'data:image/jpeg;base64,' + LOGO_B64;
 });
 
 // ── Páginas ────────────────────────────────────────────────────
-const ALL_PAGES = ['dashboard','agenda','registro','cuotas','egresos',
+const ALL_PAGES = ['dashboard','agenda','pacientes','registro','cuotas','egresos',
   'fondos','membresias','margenes','historias','recibos','chat'];
+const ASSISTANT_PAGES = ['agenda','pacientes'];
 
 window.go = function(name) {
+       if (APP.rol !== 'admin' && !ASSISTANT_PAGES.includes(name)) name = 'agenda';
   ALL_PAGES.forEach(p => {
     const el = document.getElementById('page-'+p);
     if (el) el.classList.toggle('active', p === name);
@@ -757,6 +760,7 @@ window.go = function(name) {
   ({
     dashboard:  () => renderDashboard(),
     agenda:     () => renderAgenda(),
+    pacientes:  () => renderPacientes(),
     registro:   () => window._renderRegistro(),
     cuotas:     () => window._renderCuotas(),
     egresos:    () => window._renderEgresos(),
@@ -765,7 +769,7 @@ window.go = function(name) {
     margenes:   () => { window._renderMargenes(); window._calcSim(); },
     historias:  () => window._renderLista(),
     recibos:    () => window._renderRecibos(),
-    chat:       () => { if(!mensajes?.length) mostrarBienvenida(); },
+    chat:       () => renderChat(),
   })[name]?.();
 };
 
@@ -785,15 +789,38 @@ async function initAuth() {
 
 async function afterLogin(session) {
   APP.session = session;
+  const perfil = await getPerfil(session.user.id).catch(() => null);
+  if (!perfil?.rol) {
+    await signOut();
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('app-screen').style.display  = 'none';
+    const e = document.getElementById('auth-err');
+    e.style.display = 'block';
+    e.textContent = 'Tu usuario no tiene perfil asignado. Pedí acceso al administrador.';
+    return;
+  }
+  APP.perfil = perfil;
+  APP.rol = perfil.rol;
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app-screen').style.display  = 'block';
-  document.getElementById('nav-user-name').textContent  = session.user.email;
+  document.getElementById('nav-user-name').textContent = perfil.nombre || session.user.email;
+  applyRole();
   await loadConfig();
   initUI();
-  // Cargar Google Calendar libs en background
-  loadGoogleLibs().then(() => {
-    renderGCalButton('gcal-btn-wrap');
-  }).catch(e => console.warn('GCal libs no cargaron:', e));
+  if (APP.rol === 'admin') {
+    loadGoogleLibs().then(() => renderGCalButton('gcal-btn-wrap'))
+      .catch(e => console.warn('GCal libs no cargaron:', e));
+  }
+}
+
+function applyRole() {
+  if (APP.rol === 'admin') return;
+  const keep = ['agenda','pacientes'];
+  document.querySelectorAll('.nav-tab, .bot-tab').forEach(t => {
+    const m = t.getAttribute('onclick')?.match(/go\('(\w+)'\)/);
+    if (m && !keep.includes(m[1])) t.style.display = 'none';
+  });
+  document.querySelector('button[onclick="window._openConfig()"]')?.style.setProperty('display','none');
 }
 
 window._login = async function() {
@@ -832,7 +859,7 @@ async function initUI() {
   initDedos();
   await refreshPacienteDatalist();
   loadConfigUI();
-  go('dashboard');
+  go(APP.rol === 'admin' ? 'dashboard' : 'agenda');
 }
 
 function fillServiciosSelects() {
@@ -850,12 +877,13 @@ async function refreshPacienteDatalist() {
     const pacs = await getPacientesNombres();
     ['c-pac-list','cq-pac-list','r-pac-list','h-pac-list','cita-pac-list'].forEach(id => {
       const dl = document.getElementById(id);
-      if (dl) dl.innerHTML = pacs.map(p => `<option value="${p.paciente_nombre}">`).join('');
+     if (dl) dl.innerHTML = pacs.map(p => `<option value="${esc(p.paciente_nombre)}">`).join('');
     });
   } catch(e) {}
 }
 
 // ── DASHBOARD ──────────────────────────────────────────────────
+window._refreshPacDatalist = refreshPacienteDatalist;
 window._renderDashboard = () => renderDashboard().catch(e => toast(e.message,'err'));
 
 // ── AGENDA ────────────────────────────────────────────────────
