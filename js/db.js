@@ -225,10 +225,13 @@ export async function setConfigBatch(pairs) {
   if (error) throw error;
 }
 
-// ── PACIENTES (vista desde historias + consultas) ─────────────────
+// ── PACIENTES ────────────────────────────────────────────────────
 export async function getPacientesNombres() {
-  const { data } = await supabase.from('pacientes').select('nombre, telefono, ci, direccion').order('nombre');
-  return (data || []).map(p => ({ paciente_nombre: p.nombre, telefono: p.telefono, ci: p.ci, direccion: p.direccion }));
+  const { data } = await supabase
+    .from('pacientes').select('nombre, telefono, ci, direccion').order('nombre');
+  return (data || []).map(p => ({
+    paciente_nombre: p.nombre, telefono: p.telefono, ci: p.ci, direccion: p.direccion
+  }));
 }
 
 export async function getPacientes(q) {
@@ -244,26 +247,6 @@ export async function savePaciente(p) {
     ? await supabase.from('pacientes').update(p).eq('id', p.id)
     : await supabase.from('pacientes').insert(p);
   if (error) throw error;
-}
-  const [h, c] = await Promise.all([
-    supabase.from('historias').select('paciente_nombre, ci, telefono, direccion, ficha').order('paciente_nombre'),
-    supabase.from('consultas').select('paciente_nombre').order('paciente_nombre')
-  ]);
-  const nombresSet = new Set();
-  const pacientes = [];
-  (h.data || []).forEach(p => {
-    if (!nombresSet.has(p.paciente_nombre)) {
-      nombresSet.add(p.paciente_nombre);
-      pacientes.push(p);
-    }
-  });
-  (c.data || []).forEach(p => {
-    if (!nombresSet.has(p.paciente_nombre)) {
-      nombresSet.add(p.paciente_nombre);
-      pacientes.push({ paciente_nombre: p.paciente_nombre });
-    }
-  });
-  return pacientes;
 }
 
 // ── AUTH ─────────────────────────────────────────────────────────
